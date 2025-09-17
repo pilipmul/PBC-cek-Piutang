@@ -10,13 +10,13 @@
 
   <form id="filterForm">
     <label>Nama:
-      <input type="text" id="nama">
+      <input type="text" id="nama" required>
     </label><br><br>
     <label>Lokasi:
-      <input type="text" id="lokasi">
+      <input type="text" id="lokasi" required>
     </label><br><br>
     <label>Tahun:
-      <input type="number" id="tahun">
+      <input type="number" id="tahun" required>
     </label><br><br>
     <button type="submit">Cari</button>
   </form>
@@ -25,7 +25,6 @@
   <div id="hasil"></div>
 
   <script>
-    // Ganti SHEET_ID dengan ID Google Sheet Anda
     const SHEET_URL =
       "https://docs.google.com/spreadsheets/d/e/2PACX-1vT-PAf-G7kujpAjGhWROCvIrQ2gxn4MPjiCdbmYeowwjox00VKu2mq5cVFkgSUNg91tzJXfPHF34np7/pub?output=csv";
 
@@ -38,8 +37,8 @@
       fetch(SHEET_URL)
         .then(r => r.text())
         .then(csv => {
-          const rows = csv.split('\n').map(r => r.split(','));
-          const header = rows[0];
+          const rows = csv.trim().split(/\r?\n/).map(r => r.split(','));
+          const header = rows[0].map(h => h.trim());
           const iNama = header.indexOf('Nama');
           const iLok  = header.indexOf('Lokasi');
           const iThn  = header.indexOf('Tahun');
@@ -48,14 +47,19 @@
           const match = rows.slice(1).find(r =>
             r[iNama]?.toLowerCase() === nama &&
             r[iLok]?.toLowerCase()  === lokasi &&
-            r[iThn] === tahun
+            r[iThn]?.trim() === tahun
           );
 
           document.getElementById('hasil').textContent = match
             ? `Jumlah Piutang: Rp ${match[iPiu]}`
             : 'Data tidak ditemukan';
+        })
+        .catch(err => {
+          document.getElementById('hasil').textContent = 'Gagal mengambil data.';
+          console.error(err);
         });
     });
   </script>
 </body>
 </html>
+
