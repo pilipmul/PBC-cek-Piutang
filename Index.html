@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cari Jumlah Piutang</title>
+</head>
+<body>
+  <h1>Cari Jumlah Piutang</h1>
+
+  <form id="filterForm">
+    <label>Nama:
+      <input type="text" id="nama">
+    </label><br><br>
+    <label>Lokasi:
+      <input type="text" id="lokasi">
+    </label><br><br>
+    <label>Tahun:
+      <input type="number" id="tahun">
+    </label><br><br>
+    <button type="submit">Cari</button>
+  </form>
+
+  <h2>Hasil:</h2>
+  <div id="hasil"></div>
+
+  <script>
+    // Ganti SHEET_ID dengan ID Google Sheet Anda
+    const SHEET_URL =
+      "https://docs.google.com/spreadsheets/d/e/2PACX-1vT-PAf-G7kujpAjGhWROCvIrQ2gxn4MPjiCdbmYeowwjox00VKu2mq5cVFkgSUNg91tzJXfPHF34np7/pub?output=csv";
+
+    document.getElementById('filterForm').addEventListener('submit', e => {
+      e.preventDefault();
+      const nama   = document.getElementById('nama').value.trim().toLowerCase();
+      const lokasi = document.getElementById('lokasi').value.trim().toLowerCase();
+      const tahun  = document.getElementById('tahun').value.trim();
+
+      fetch(SHEET_URL)
+        .then(r => r.text())
+        .then(csv => {
+          const rows = csv.split('\n').map(r => r.split(','));
+          const header = rows[0];
+          const iNama = header.indexOf('Nama');
+          const iLok  = header.indexOf('Lokasi');
+          const iThn  = header.indexOf('Tahun');
+          const iPiu  = header.indexOf('Piutang');
+
+          const match = rows.slice(1).find(r =>
+            r[iNama]?.toLowerCase() === nama &&
+            r[iLok]?.toLowerCase()  === lokasi &&
+            r[iThn] === tahun
+          );
+
+          document.getElementById('hasil').textContent = match
+            ? `Jumlah Piutang: Rp ${match[iPiu]}`
+            : 'Data tidak ditemukan';
+        });
+    });
+  </script>
+</body>
+</html>
