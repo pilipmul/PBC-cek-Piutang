@@ -1,65 +1,106 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Index AR PBC</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cari Data Piutang</title>
+<style>
+  table { border-collapse: collapse; width: 100%; margin-top: 1em; }
+  th, td { border: 1px solid #ccc; padding: 6px; text-align: left; }
+  th { background: #f0f0f0; }
+</style>
 </head>
 <body>
-  <h1>Index AR PBC</h1>
+<h1>Cari Data Piutang</h1>
 
-  <form id="filterForm">
-    <label>Nama:
-      <input type="text" id="nama" required>
-    </label><br><br>
-    <label>Lokasi:
-      <input type="text" id="lokasi" required>
-    </label><br><br>
-    <label>Tahun:
-      <input type="number" id="tahun" required>
-    </label><br><br>
-    <button type="submit">Cari</button>
-  </form>
+<form id="filterForm">
+  <label>Nama:
+    <input type="text" id="nama" required>
+  </label><br><br>
+  <label>Lokasi:
+    <input type="text" id="lokasi" required>
+  </label><br><br>
+  <label>Tahun:
+    <input type="number" id="tahun" required>
+  </label><br><br>
+  <button type="submit">Cari</button>
+</form>
 
-  <h2>Hasil:</h2>
-  <div id="hasil"></div>
+<h2>Hasil:</h2>
+<table>
+  <thead>
+    <tr>
+      <th>No. Faktur</th>
+      <th>Tgl Faktur</th>
+      <th>No. Pelanggan</th>
+      <th>Nama Pelanggan</th>
+      <th>Nilai Faktur</th>
+      <th>Terutang</th>
+      <th>Keterangan</th>
+    </tr>
+  </thead>
+  <tbody id="hasilBody">
+    <!-- baris hasil akan muncul di sini -->
+  </tbody>
+</table>
 
-  <script>
-    const SHEET_URL =
-      "https://docs.google.com/spreadsheets/d/e/2PACX-1vT-PAf-G7kujpAjGhWROCvIrQ2gxn4MPjiCdbmYeowwjox00VKu2mq5cVFkgSUNg91tzJXfPHF34np7/pub?output=csv";
+<script>
+const SHEET_URL =
+  "https://docs.google.com/spreadsheets/d/e/2PACX-1vT-PAf-G7kujpAjGhWROCvIrQ2gxn4MPjiCdbmYeowwjox00VKu2mq5cVFkgSUNg91tzJXfPHF34np7/pub?output=csv";
 
-    document.getElementById('filterForm').addEventListener('submit', e => {
-      e.preventDefault();
-      const nama   = document.getElementById('nama').value.trim().toLowerCase();
-      const lokasi = document.getElementById('lokasi').value.trim().toLowerCase();
-      const tahun  = document.getElementById('tahun').value.trim();
+document.getElementById('filterForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const nama   = document.getElementById('nama').value.trim().toLowerCase();
+  const lokasi = document.getElementById('lokasi').value.trim().toLowerCase();
+  const tahun  = document.getElementById('tahun').value.trim();
 
-      fetch(SHEET_URL)
-        .then(r => r.text())
-        .then(csv => {
-          const rows = csv.trim().split(/\r?\n/).map(r => r.split(','));
-          const header = rows[0].map(h => h.trim());
-          const iNama = header.indexOf('Nama');
-          const iLok  = header.indexOf('Lokasi');
-          const iThn  = header.indexOf('Tahun');
-          const iPiu  = header.indexOf('Piutang');
+  fetch(SHEET_URL)
+    .then(r => r.text())
+    .then(csv => {
+      const rows = csv.trim().split(/\r?\n/).map(r => r.split(','));
+      const header = rows[0].map(h => h.trim());
 
-          const match = rows.slice(1).find(r =>
-            r[iNama]?.toLowerCase() === nama &&
-            r[iLok]?.toLowerCase()  === lokasi &&
-            r[iThn]?.trim() === tahun
-          );
+      // pastikan kolom di sheet punya nama persis seperti di bawah
+      const iNama   = header.indexOf('Nama Pelanggan');
+      const iLok    = header.indexOf('Lokasi');
+      const iTahun  = header.indexOf('Tahun');
+      const iFaktur = header.indexOf('No. Faktur');
 
-          document.getElementById('hasil').textContent = match
-            ? `Jumlah Piutang: Rp ${match[iPiu]}`
-            : 'Data tidak ditemukan';
-        })
-        .catch(err => {
-          document.getElementById('hasil').textContent = 'Gagal mengambil data.';
-          console.error(err);
+      // filter sesuai input form
+      const hasil = rows.slice(1).filter(r =>
+        r[iNama]?.toLowerCase() === nama &&
+        r[iLok]?.toLowerCase()  === lokasi &&
+        r[iTahun]?.trim()       === tahun
+      );
+
+      const body = document.getElementById('hasilBody');
+      body.innerHTML = '';
+
+      if (hasil.length === 0) {
+        body.innerHTML = '<tr><td colspan="7">Data tidak ditemukan</td></tr>';
+        return;
+      }
+
+      // tampilkan setiap baris sesuai urutan kolom header sheet
+      hasil.forEach(r => {
+        const tr = document.createElement('tr');
+        [
+          'No. Faktur','Tgl Faktur','No. Pelanggan',
+          'Nama Pelanggan','Nilai Faktur','Terutang','Keterangan'
+        ].forEach(col => {
+          const td = document.createElement('td');
+          td.textContent = r[header.indexOf(col)] || '';
+          tr.appendChild(td);
         });
+        body.appendChild(tr);
+      });
+    })
+    .catch(err => {
+      console.error(err);
+      document.getElementById('hasilBody').innerHTML =
+        '<tr><td colspan="7">Gagal mengambil data</td></tr>';
     });
-  </script>
+});
+</script>
 </body>
 </html>
-
