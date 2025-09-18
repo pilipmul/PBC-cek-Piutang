@@ -9,6 +9,7 @@
   th, td { border: 1px solid #ccc; padding: 6px; text-align: left; }
   th { background: #f0f0f0; }
   #total { margin-top:1em; font-weight: bold; }
+  #downloadBtn { margin-top:1em; padding:8px 16px; display:none; }
 </style>
 </head>
 <body>
@@ -28,7 +29,7 @@
 </form>
 
 <h2>Hasil:</h2>
-<table>
+<table id="hasilTable">
   <thead>
     <tr>
       <th>No. Faktur</th>
@@ -45,6 +46,12 @@
   </tbody>
 </table>
 <div id="total"></div>
+
+<button id="downloadBtn">Download PDF</button>
+
+<!-- jsPDF & autoTable CDN -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
 
 <script>
 const SHEET_URL =
@@ -71,12 +78,11 @@ document.getElementById('filterForm').addEventListener('submit', e => {
       const iTerutang= header.indexOf('Terutang');
       const iKet     = header.indexOf('Keterangan');
 
-      // gunakan filter untuk ambil SEMUA baris yang cocok
       const hasil = rows.slice(1).filter(r => {
         const namaPel = r[iNamaPel]?.trim().toLowerCase();
         const noPel   = r[iNoPel]?.trim().toLowerCase();
         const tgl     = r[iTglFak]?.trim();
-        const tahunFak = tgl && tgl.split(/[./]/)[2];
+        const tahunFak = tgl && tgl.split(/[./]/)[2]; // support dd/mm/yyyy atau dd.mm.yyyy
         return (
           namaPel === nama &&
           noPel === lokasi &&
@@ -88,6 +94,8 @@ document.getElementById('filterForm').addEventListener('submit', e => {
       body.innerHTML = '';
       const totalDiv = document.getElementById('total');
       totalDiv.textContent = '';
+      const dlBtn = document.getElementById('downloadBtn');
+      dlBtn.style.display = 'none';
 
       if (hasil.length === 0) {
         body.innerHTML = '<tr><td colspan="7">Data tidak ditemukan</td></tr>';
@@ -104,20 +112,55 @@ document.getElementById('filterForm').addEventListener('submit', e => {
         });
         body.appendChild(tr);
 
-        // hitung total terutang
         const ter = parseFloat(r[iTerutang]) || 0;
         totalTerutang += ter;
       });
 
-      // tampilkan total terutang (opsional)
       totalDiv.textContent = "Total Terutang: Rp " +
         totalTerutang.toLocaleString('id-ID');
+
+      // tampilkan tombol download bila ada hasil
+      dlBtn.style.display = 'inline-block';
     })
     .catch(err => {
       console.error(err);
       document.getElementById('hasilBody').innerHTML =
         '<tr><td colspan="7">Gagal mengambil data</td></tr>';
     });
+});
+
+// ====== Download ke PDF ======
+document.getElementById('downloadBtn').addEventListener('click', () => {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF('p', 'pt');
+
+  doc.setFontSize(14);
+  doc.text("Index AR PBC - Hasil Pencarian", 40, 30);
+
+  // ambil header tabel
+  const head = [];
+  document.querySelectorAll('#hasilTable thead tr').forEach(tr => {
+    head.push(Array.from(tr.querySelectorAll('th')).map(th => th.textContent));
+  });
+
+  // ambil isi tabel
+  const body = [];
+  document.querySelectorAll('#hasilTable tbody tr').forEach(tr => {
+    body.push(Array.from(tr.querySelectorAll('td')).map(td => td.textContent));
+  });
+
+  doc.autoTable({
+    head: head,
+    body: body,
+    startY: 50,
+    styles: { fontSize: 9 }
+  });
+
+  // Tambahkan total bila ada
+  const totalTxt = document.getElementById('total').textContent;
+  if(totalTxt) doc.text(totalTxt, 40, doc.lastAutoTable.finalY + 20);
+
+  doc.save('Index_AR_PBC.pdf');
 });
 </script>
 </body>
