@@ -8,19 +8,20 @@
   table { border-collapse: collapse; width: 100%; margin-top: 1em; }
   th, td { border: 1px solid #ccc; padding: 6px; text-align: left; }
   th { background: #f0f0f0; }
+  #total { margin-top:1em; font-weight: bold; }
 </style>
 </head>
 <body>
 <h1>Cari Data Piutang</h1>
 
 <form id="filterForm">
-  <label>Nama :
+  <label>Nama (Nama Pelanggan):
     <input type="text" id="nama" required>
   </label><br><br>
-  <label>Lokasi :
+  <label>Lokasi (No. Pelanggan):
     <input type="text" id="lokasi" required>
   </label><br><br>
-  <label>Tahun :
+  <label>Tahun (dari Tgl Faktur):
     <input type="number" id="tahun" required>
   </label><br><br>
   <button type="submit">Cari</button>
@@ -43,6 +44,7 @@
     <!-- Hasil akan ditambahkan di sini -->
   </tbody>
 </table>
+<div id="total"></div>
 
 <script>
 const SHEET_URL =
@@ -61,7 +63,6 @@ document.getElementById('filterForm').addEventListener('submit', e => {
       const rows = csv.trim().split(/\r?\n/).map(r => r.split(','));
       const header = rows[0].map(h => h.trim());
 
-      // Ambil index kolom sesuai nama header
       const iNoFak   = header.indexOf('No. Faktur');
       const iTglFak  = header.indexOf('Tgl Faktur');
       const iNoPel   = header.indexOf('No. Pelanggan');
@@ -70,11 +71,11 @@ document.getElementById('filterForm').addEventListener('submit', e => {
       const iTerutang= header.indexOf('Terutang');
       const iKet     = header.indexOf('Keterangan');
 
+      // gunakan filter untuk ambil SEMUA baris yang cocok
       const hasil = rows.slice(1).filter(r => {
         const namaPel = r[iNamaPel]?.trim().toLowerCase();
         const noPel   = r[iNoPel]?.trim().toLowerCase();
         const tgl     = r[iTglFak]?.trim();
-        // Ambil tahun dari format dd/mm/yyyy
         const tahunFak = tgl && tgl.split('/')[2];
         return (
           namaPel === nama &&
@@ -85,12 +86,15 @@ document.getElementById('filterForm').addEventListener('submit', e => {
 
       const body = document.getElementById('hasilBody');
       body.innerHTML = '';
+      const totalDiv = document.getElementById('total');
+      totalDiv.textContent = '';
 
       if (hasil.length === 0) {
         body.innerHTML = '<tr><td colspan="7">Data tidak ditemukan</td></tr>';
         return;
       }
 
+      let totalTerutang = 0;
       hasil.forEach(r => {
         const tr = document.createElement('tr');
         [iNoFak,iTglFak,iNoPel,iNamaPel,iNilai,iTerutang,iKet].forEach(idx => {
@@ -99,7 +103,15 @@ document.getElementById('filterForm').addEventListener('submit', e => {
           tr.appendChild(td);
         });
         body.appendChild(tr);
+
+        // hitung total terutang
+        const ter = parseFloat(r[iTerutang]) || 0;
+        totalTerutang += ter;
       });
+
+      // tampilkan total terutang (opsional)
+      totalDiv.textContent = "Total Terutang: Rp " +
+        totalTerutang.toLocaleString('id-ID');
     })
     .catch(err => {
       console.error(err);
