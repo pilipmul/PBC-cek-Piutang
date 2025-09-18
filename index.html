@@ -76,7 +76,7 @@ document.getElementById('filterForm').addEventListener('submit', e => {
         const namaPel = r[iNamaPel]?.trim().toLowerCase();
         const noPel   = r[iNoPel]?.trim().toLowerCase();
         const tgl     = r[iTglFak]?.trim();
-        const tahunFak = tgl && tgl.split('/')[2];
+        const tahunFak = tgl && tgl.split(/[./]/)[2];
         return (
           namaPel === nama &&
           noPel === lokasi &&
