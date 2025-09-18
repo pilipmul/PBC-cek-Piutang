@@ -5,12 +5,16 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Index AR PBC</title>
 <style>
+  body { font-family: Arial, sans-serif; }
   table { border-collapse: collapse; width: 100%; margin-top: 1em; }
   th, td { border: 1px solid #ccc; padding: 6px; text-align: left; }
   th { background: #f0f0f0; }
   #total { margin-top:1em; font-weight: bold; }
-  #downloadBtn { margin-top:1em; padding:8px 16px; display:none; }
+  #download { margin-top:1em; display:none; }
 </style>
+<!-- pustaka jsPDF + autotable -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
 </head>
 <body>
 <h1>Index AR PBC</h1>
@@ -41,21 +45,17 @@
       <th>Keterangan</th>
     </tr>
   </thead>
-  <tbody id="hasilBody">
-    <!-- Hasil akan ditambahkan di sini -->
-  </tbody>
+  <tbody id="hasilBody"></tbody>
 </table>
 <div id="total"></div>
-
-<button id="downloadBtn">Download PDF</button>
-
-<!-- jsPDF & autoTable CDN -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+<button id="download">Download PDF</button>
 
 <script>
-const SHEET_URL =
-  "https://docs.google.com/spreadsheets/d/e/2PACX-1vT-PAf-G7kujpAjGhWROCvIrQ2gxn4MPjiCdbmYeowwjox00VKu2mq5cVFkgSUNg91tzJXfPHF34np7/pub?output=csv";
+const SHEET_URLS = [
+  "https://docs.google.com/spreadsheets/d/e/2PACX-1vT-PAf-G7kujpAjGhWROCvIrQ2gxn4MPjiCdbmYeowwjox00VKu2mq5cVFkgSUNg91tzJXfPHF34np7/pub?output=csv",
+  "https://docs.google.com/spreadsheets/d/e/2PACX-1vT-PAf-G7kujpAjGhWROCvIrQ2gxn4MPjiCdbmYeowwjox00VKu2mq5cVFkgSUNg91tzJXfPHF34np7/pub?output=csv",
+  "URL_CSV_AR_2025"
+];
 
 document.getElementById('filterForm').addEventListener('submit', e => {
   e.preventDefault();
@@ -64,12 +64,16 @@ document.getElementById('filterForm').addEventListener('submit', e => {
   const lokasi = document.getElementById('lokasi').value.trim().toLowerCase();
   const tahun  = document.getElementById('tahun').value.trim();
 
-  fetch(SHEET_URL)
-    .then(r => r.text())
-    .then(csv => {
-      const rows = csv.trim().split(/\r?\n/).map(r => r.split(','));
-      const header = rows[0].map(h => h.trim());
+  Promise.all(SHEET_URLS.map(url => fetch(url).then(r => r.text())))
+    .then(allCsv => {
+      const allRows = [];
+      allCsv.forEach((csv, idx) => {
+        const rows = csv.trim().split(/\r?\n/).map(r => r.split(','));
+        if (idx === 0) allRows.push(rows[0]);
+        allRows.push(...rows.slice(1));
+      });
 
+      const header = allRows[0].map(h => h.trim());
       const iNoFak   = header.indexOf('No. Faktur');
       const iTglFak  = header.indexOf('Tgl Faktur');
       const iNoPel   = header.indexOf('No. Pelanggan');
@@ -78,24 +82,19 @@ document.getElementById('filterForm').addEventListener('submit', e => {
       const iTerutang= header.indexOf('Terutang');
       const iKet     = header.indexOf('Keterangan');
 
-      const hasil = rows.slice(1).filter(r => {
+      const hasil = allRows.slice(1).filter(r => {
         const namaPel = r[iNamaPel]?.trim().toLowerCase();
         const noPel   = r[iNoPel]?.trim().toLowerCase();
         const tgl     = r[iTglFak]?.trim();
-        const tahunFak = tgl && tgl.split(/[./]/)[2]; // support dd/mm/yyyy atau dd.mm.yyyy
-        return (
-          namaPel === nama &&
-          noPel === lokasi &&
-          tahunFak === tahun
-        );
+        const tahunFak = tgl && tgl.split(/[./]/)[2];
+        return namaPel === nama && noPel === lokasi && tahunFak === tahun;
       });
 
       const body = document.getElementById('hasilBody');
       body.innerHTML = '';
       const totalDiv = document.getElementById('total');
       totalDiv.textContent = '';
-      const dlBtn = document.getElementById('downloadBtn');
-      dlBtn.style.display = 'none';
+      document.getElementById('download').style.display = 'none';
 
       if (hasil.length === 0) {
         body.innerHTML = '<tr><td colspan="7">Data tidak ditemukan</td></tr>';
@@ -111,16 +110,14 @@ document.getElementById('filterForm').addEventListener('submit', e => {
           tr.appendChild(td);
         });
         body.appendChild(tr);
-
-        const ter = parseFloat(r[iTerutang]) || 0;
-        totalTerutang += ter;
+        totalTerutang += parseFloat(r[iTerutang]) || 0;
       });
 
       totalDiv.textContent = "Total Terutang: Rp " +
         totalTerutang.toLocaleString('id-ID');
 
-      // tampilkan tombol download bila ada hasil
-      dlBtn.style.display = 'inline-block';
+      // tampilkan tombol download
+      document.getElementById('download').style.display = 'inline-block';
     })
     .catch(err => {
       console.error(err);
@@ -129,38 +126,13 @@ document.getElementById('filterForm').addEventListener('submit', e => {
     });
 });
 
-// ====== Download ke PDF ======
-document.getElementById('downloadBtn').addEventListener('click', () => {
+// Download PDF
+document.getElementById('download').addEventListener('click', () => {
   const { jsPDF } = window.jspdf;
-  const doc = new jsPDF('p', 'pt');
-
-  doc.setFontSize(14);
-  doc.text("Index AR PBC - Hasil Pencarian", 40, 30);
-
-  // ambil header tabel
-  const head = [];
-  document.querySelectorAll('#hasilTable thead tr').forEach(tr => {
-    head.push(Array.from(tr.querySelectorAll('th')).map(th => th.textContent));
-  });
-
-  // ambil isi tabel
-  const body = [];
-  document.querySelectorAll('#hasilTable tbody tr').forEach(tr => {
-    body.push(Array.from(tr.querySelectorAll('td')).map(td => td.textContent));
-  });
-
-  doc.autoTable({
-    head: head,
-    body: body,
-    startY: 50,
-    styles: { fontSize: 9 }
-  });
-
-  // Tambahkan total bila ada
-  const totalTxt = document.getElementById('total').textContent;
-  if(totalTxt) doc.text(totalTxt, 40, doc.lastAutoTable.finalY + 20);
-
-  doc.save('Index_AR_PBC.pdf');
+  const doc = new jsPDF();
+  doc.text("Index AR PBC", 14, 15);
+  doc.autoTable({ html: '#hasilTable', startY: 20 });
+  doc.save("Index_AR_PBC.pdf");
 });
 </script>
 </body>
