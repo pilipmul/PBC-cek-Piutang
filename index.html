@@ -14,13 +14,13 @@
 <h1>Cari Data Piutang</h1>
 
 <form id="filterForm">
-  <label>Nama:
+  <label>Nama (Nama Pelanggan):
     <input type="text" id="nama" required>
   </label><br><br>
-  <label>Lokasi:
+  <label>Lokasi (No. Pelanggan):
     <input type="text" id="lokasi" required>
   </label><br><br>
-  <label>Tahun:
+  <label>Tahun (dari Tgl Faktur):
     <input type="number" id="tahun" required>
   </label><br><br>
   <button type="submit">Cari</button>
@@ -40,7 +40,7 @@
     </tr>
   </thead>
   <tbody id="hasilBody">
-    <!-- baris hasil akan muncul di sini -->
+    <!-- Hasil akan ditambahkan di sini -->
   </tbody>
 </table>
 
@@ -50,6 +50,7 @@ const SHEET_URL =
 
 document.getElementById('filterForm').addEventListener('submit', e => {
   e.preventDefault();
+
   const nama   = document.getElementById('nama').value.trim().toLowerCase();
   const lokasi = document.getElementById('lokasi').value.trim().toLowerCase();
   const tahun  = document.getElementById('tahun').value.trim();
@@ -60,18 +61,27 @@ document.getElementById('filterForm').addEventListener('submit', e => {
       const rows = csv.trim().split(/\r?\n/).map(r => r.split(','));
       const header = rows[0].map(h => h.trim());
 
-      // pastikan kolom di sheet punya nama persis seperti di bawah
-      const iNama   = header.indexOf('Nama Pelanggan');
-      const iLok    = header.indexOf('Lokasi');
-      const iTahun  = header.indexOf('Tahun');
-      const iFaktur = header.indexOf('No. Faktur');
+      // Ambil index kolom sesuai nama header
+      const iNoFak   = header.indexOf('No. Faktur');
+      const iTglFak  = header.indexOf('Tgl Faktur');
+      const iNoPel   = header.indexOf('No. Pelanggan');
+      const iNamaPel = header.indexOf('Nama Pelanggan');
+      const iNilai   = header.indexOf('Nilai Faktur');
+      const iTerutang= header.indexOf('Terutang');
+      const iKet     = header.indexOf('Keterangan');
 
-      // filter sesuai input form
-      const hasil = rows.slice(1).filter(r =>
-        r[iNama]?.toLowerCase() === nama &&
-        r[iLok]?.toLowerCase()  === lokasi &&
-        r[iTahun]?.trim()       === tahun
-      );
+      const hasil = rows.slice(1).filter(r => {
+        const namaPel = r[iNamaPel]?.trim().toLowerCase();
+        const noPel   = r[iNoPel]?.trim().toLowerCase();
+        const tgl     = r[iTglFak]?.trim();
+        // Ambil tahun dari format dd/mm/yyyy
+        const tahunFak = tgl && tgl.split('/')[2];
+        return (
+          namaPel === nama &&
+          noPel === lokasi &&
+          tahunFak === tahun
+        );
+      });
 
       const body = document.getElementById('hasilBody');
       body.innerHTML = '';
@@ -81,15 +91,11 @@ document.getElementById('filterForm').addEventListener('submit', e => {
         return;
       }
 
-      // tampilkan setiap baris sesuai urutan kolom header sheet
       hasil.forEach(r => {
         const tr = document.createElement('tr');
-        [
-          'No. Faktur','Tgl Faktur','No. Pelanggan',
-          'Nama Pelanggan','Nilai Faktur','Terutang','Keterangan'
-        ].forEach(col => {
+        [iNoFak,iTglFak,iNoPel,iNamaPel,iNilai,iTerutang,iKet].forEach(idx => {
           const td = document.createElement('td');
-          td.textContent = r[header.indexOf(col)] || '';
+          td.textContent = r[idx] || '';
           tr.appendChild(td);
         });
         body.appendChild(tr);
