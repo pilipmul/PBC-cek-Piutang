@@ -7,31 +7,41 @@
 <style>
   body { font-family: Arial, sans-serif; }
 
-  /* Form grid: label | colon | input */
+  /* ===== Form ===== */
   form {
     display: grid;
-    grid-template-columns: auto 10px 1fr;
+    grid-template-columns: auto 10px 1fr; /* label | colon | input */
     grid-row-gap: 10px;
     max-width: 400px;
     margin-bottom: 1em;
     align-items: center;
   }
-  form label { text-align: left; padding-right: 4px; }
+  form label { text-align: left; }
   form .colon { text-align: center; }
   form input {
-    width: 50%;           /* kotak pengisian setengah lebar form */
+    width: 50%;               /* kotak pengisian setengah lebar form */
     padding: 4px 6px;
     box-sizing: border-box;
   }
+  /* Tombol cari setengah lebar input dan center */
+  .btn-wrapper {
+    grid-column: 1 / 4;       /* span full width grid */
+    text-align: center;
+  }
+  form button {
+    width: 25%;              /* setengah dari input (input 50% form) */
+    padding: 6px 0;
+  }
 
-  table { border-collapse: collapse; width: 100%; margin-top: 1em; display:none; }
+  /* ===== Tabel ===== */
+  #hasilSection { display: none; margin-top:1em; }
+  table { border-collapse: collapse; width: 100%; margin-top: 1em; }
   th, td { border: 1px solid #ccc; padding: 6px; text-align: left; }
   th { background: #f0f0f0; }
-  #total { margin-top:1em; font-weight: bold; display:none; }
+  #total { margin-top:1em; font-weight: bold; }
   #download { margin-top:1em; display:none; }
 </style>
-
-<!-- pustaka jsPDF + autotable -->
+<!-- jsPDF + autotable -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
 </head>
@@ -48,40 +58,45 @@
   <label for="password">Password</label><div class="colon">:</div>
   <input type="password" id="password" required>
 
-  <div></div><div></div>
-  <button type="submit">Cari</button>
+  <div class="btn-wrapper">
+    <button type="submit">Cari</button>
+  </div>
 </form>
 
-<h2 id="hasilTitle" style="display:none;">Hasil:</h2>
-<table id="hasilTable">
-  <thead>
-    <tr>
-      <th>No</th>
-      <th>No. Faktur</th>
-      <th>Tgl Faktur</th>
-      <th>No. Pelanggan</th>
-      <th>Nama Pelanggan</th>
-      <th>Nilai Faktur</th>
-      <th>Terutang</th>
-      <th>Tanggal Bayar</th>
-      <th>Keterangan</th>
-    </tr>
-  </thead>
-  <tbody id="hasilBody"></tbody>
-</table>
-<div id="total"></div>
-<button id="download">Download PDF</button>
+<!-- Hasil pencarian -->
+<section id="hasilSection">
+  <h2>Hasil:</h2>
+  <table id="hasilTable">
+    <thead>
+      <tr>
+        <th>No</th>
+        <th>No. Faktur</th>
+        <th>Tgl Faktur</th>
+        <th>No. Pelanggan</th>
+        <th>Nama Pelanggan</th>
+        <th>Nilai Faktur</th>
+        <th>Terutang</th>
+        <th>Tanggal Bayar</th>
+        <th>Keterangan</th>
+      </tr>
+    </thead>
+    <tbody id="hasilBody"></tbody>
+  </table>
+  <div id="total"></div>
+  <button id="download">Download PDF</button>
+</section>
 
 <script>
+const MASTER_PASS = "master123"; // ganti sesuai kebutuhan
 const SHEET_URLS = [
   "https://docs.google.com/spreadsheets/d/e/2PACX-1vT-PAf-G7kujpAjGhWROCvIrQ2gxn4MPjiCdbmYeowwjox00VKu2mq5cVFkgSUNg91tzJXfPHF34np7/pub?gid=126462838&single=true&output=csv",
-  "https://docs.google.com/spreadsheets/d/e/2PACX-1vT-PAf-G7kujpAjGhWROCvIrQ2gxn4MPjiCdbmYeowwjox00VKu2mq5cVFkgSUNg91tzJXfPHF34np7/pub?gid=2117938894&single=true&output=csv",
+  "URL_CSV_AR_2024",
   "URL_CSV_AR_2025"
 ];
-const MASTER_PASSWORD = "master123"; // ubah sesuai kebutuhan
 
 document.getElementById('filterForm').addEventListener('submit', e => {
   e.preventDefault();
+
   const lokasi = document.getElementById('lokasi').value.trim().toLowerCase();
   const tahun  = document.getElementById('tahun').value.trim();
   const pass   = document.getElementById('password').value.trim();
@@ -106,10 +121,10 @@ document.getElementById('filterForm').addEventListener('submit', e => {
       const iKet     = header.indexOf('Keterangan');
       const iPass    = header.indexOf('Password');
 
-      // ambil semua baris yang sesuai lokasi & tahun
+      // ambil baris sesuai lokasi & tahun
       const hasil = allRows.slice(1).filter(r => {
-        const noPel   = r[iNoPel]?.trim().toLowerCase();
-        const tgl     = r[iTglFak]?.trim();
+        const noPel = r[iNoPel]?.trim().toLowerCase();
+        const tgl   = r[iTglFak]?.trim();
         const tahunFak = tgl && tgl.split(/[./]/)[2];
         return noPel === lokasi && tahunFak === tahun;
       });
@@ -117,30 +132,29 @@ document.getElementById('filterForm').addEventListener('submit', e => {
       const body = document.getElementById('hasilBody');
       body.innerHTML = '';
       const totalDiv = document.getElementById('total');
-      totalDiv.style.display = 'none';
+      totalDiv.textContent = '';
       document.getElementById('download').style.display = 'none';
-      document.getElementById('hasilTable').style.display = 'none';
-      document.getElementById('hasilTitle').style.display = 'none';
+
+      // sembunyikan tabel dulu
+      document.getElementById('hasilSection').style.display = 'none';
 
       if (hasil.length === 0) {
-        body.innerHTML = '<tr><td colspan="9">Data tidak ditemukan</td></tr>';
-        document.getElementById('hasilTable').style.display = 'table';
-        document.getElementById('hasilTitle').style.display = 'block';
+        alert("Data tidak ditemukan");
         return;
       }
 
-      // cek password (harus semua baris lokasi sama, cukup ambil baris pertama)
-      const sheetPass = hasil[0][iPass]?.trim();
-      if (pass !== MASTER_PASSWORD && pass !== sheetPass) {
-        alert("Password salah.");
+      // cek password (satu lokasi => password sama di semua baris)
+      const lokasiPass = hasil[0][iPass]?.trim();
+      if (pass !== MASTER_PASS && pass !== lokasiPass) {
+        alert("Password salah");
         return;
       }
 
-      let totalPiutang = 0;
       let totalTerutang = 0;
+      let totalNilai    = 0;
       hasil.forEach((r, idx) => {
         const tr = document.createElement('tr');
-        // kolom No urut
+        // Tambah kolom nomor
         const tdNo = document.createElement('td');
         tdNo.textContent = idx + 1;
         tr.appendChild(tdNo);
@@ -150,31 +164,26 @@ document.getElementById('filterForm').addEventListener('submit', e => {
           tr.appendChild(td);
         });
         body.appendChild(tr);
-
-        totalPiutang  += parseFloat(r[iNilai])    || 0;
         totalTerutang += parseFloat(r[iTerutang]) || 0;
+        totalNilai    += parseFloat(r[iNilai]) || 0;
       });
 
-      totalDiv.textContent =
-        "Total Nilai Faktur: Rp " + totalPiutang.toLocaleString('id-ID') +
-        " | Total Terutang: Rp " + totalTerutang.toLocaleString('id-ID');
-      totalDiv.style.display = 'block';
+      totalDiv.textContent = "Total Nilai Faktur: Rp " +
+        totalNilai.toLocaleString('id-ID') +
+        " | Total Terutang: Rp " +
+        totalTerutang.toLocaleString('id-ID');
 
-      // tampilkan tabel dan tombol download
-      document.getElementById('hasilTable').style.display = 'table';
-      document.getElementById('hasilTitle').style.display = 'block';
+      // tampilkan tabel & tombol download
+      document.getElementById('hasilSection').style.display = 'block';
       document.getElementById('download').style.display = 'inline-block';
     })
     .catch(err => {
       console.error(err);
-      document.getElementById('hasilBody').innerHTML =
-        '<tr><td colspan="9">Gagal mengambil data</td></tr>';
-      document.getElementById('hasilTable').style.display = 'table';
-      document.getElementById('hasilTitle').style.display = 'block';
+      alert("Gagal mengambil data");
     });
 });
 
-// Download PDF Landscape
+// Download PDF landscape
 document.getElementById('download').addEventListener('click', () => {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ orientation: 'landscape' });
