@@ -11,8 +11,9 @@
   th { background: #f0f0f0; }
   #total { margin-top:1em; font-weight: bold; }
   #download { margin-top:1em; display:none; }
+  #hasilContainer { display:none; margin-top:1.5em; }
 </style>
-<!-- pustaka jsPDF + autotable -->
+<!-- jsPDF + autotable -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
 </head>
@@ -32,29 +33,32 @@
   <button type="submit">Cari</button>
 </form>
 
-<h2>Hasil:</h2>
-<table id="hasilTable">
-  <thead>
-    <tr>
-      <th>No. Faktur</th>
-      <th>Tgl Faktur</th>
-      <th>No. Pelanggan</th>
-      <th>Nama Pelanggan</th>
-      <th>Nilai Faktur</th>
-      <th>Terutang</th>
-      <th>Keterangan</th>
-    </tr>
-  </thead>
-  <tbody id="hasilBody"></tbody>
-</table>
-<div id="total"></div>
-<button id="download">Download PDF</button>
+<!-- Container hasil yang disembunyikan awalnya -->
+<div id="hasilContainer">
+  <h2>Hasil:</h2>
+  <table id="hasilTable">
+    <thead>
+      <tr>
+        <th>No. Faktur</th>
+        <th>Tgl Faktur</th>
+        <th>No. Pelanggan</th>
+        <th>Nama Pelanggan</th>
+        <th>Nilai Faktur</th>
+        <th>Terutang</th>
+        <th>Keterangan</th>
+      </tr>
+    </thead>
+    <tbody id="hasilBody"></tbody>
+  </table>
+  <div id="total"></div>
+  <button id="download">Download PDF</button>
+</div>
 
 <script>
 const SHEET_URLS = [
   "https://docs.google.com/spreadsheets/d/e/2PACX-1vT-PAf-G7kujpAjGhWROCvIrQ2gxn4MPjiCdbmYeowwjox00VKu2mq5cVFkgSUNg91tzJXfPHF34np7/pub?gid=126462838&single=true&output=csv",
   "https://docs.google.com/spreadsheets/d/e/2PACX-1vT-PAf-G7kujpAjGhWROCvIrQ2gxn4MPjiCdbmYeowwjox00VKu2mq5cVFkgSUNg91tzJXfPHF34np7/pub?gid=2117938894&single=true&output=csv",
-  "URL_CSV_AR_2025"
+  "URL_CSV_AR_2025" // tambah URL sheet lain jika ada
 ];
 
 document.getElementById('filterForm').addEventListener('submit', e => {
@@ -69,7 +73,7 @@ document.getElementById('filterForm').addEventListener('submit', e => {
       const allRows = [];
       allCsv.forEach((csv, idx) => {
         const rows = csv.trim().split(/\r?\n/).map(r => r.split(','));
-        if (idx === 0) allRows.push(rows[0]);
+        if (idx === 0) allRows.push(rows[0]); // header
         allRows.push(...rows.slice(1));
       });
 
@@ -95,11 +99,15 @@ document.getElementById('filterForm').addEventListener('submit', e => {
       const totalDiv = document.getElementById('total');
       totalDiv.textContent = '';
       document.getElementById('download').style.display = 'none';
+      document.getElementById('hasilContainer').style.display = 'none';
 
       if (hasil.length === 0) {
-        body.innerHTML = '<tr><td colspan="7">Data tidak ditemukan</td></tr>';
+        alert('Data tidak ditemukan');
         return;
       }
+
+      // ada hasil -> tampilkan container
+      document.getElementById('hasilContainer').style.display = 'block';
 
       let totalTerutang = 0;
       hasil.forEach(r => {
@@ -116,13 +124,11 @@ document.getElementById('filterForm').addEventListener('submit', e => {
       totalDiv.textContent = "Total Terutang: Rp " +
         totalTerutang.toLocaleString('id-ID');
 
-      // tampilkan tombol download
       document.getElementById('download').style.display = 'inline-block';
     })
     .catch(err => {
       console.error(err);
-      document.getElementById('hasilBody').innerHTML =
-        '<tr><td colspan="7">Gagal mengambil data</td></tr>';
+      alert('Gagal mengambil data');
     });
 });
 
