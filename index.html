@@ -8,36 +8,21 @@
   body { font-family: Arial, sans-serif; }
   form {
     display: grid;
-    grid-template-columns: auto 10px 1fr; /* kolom: label | titik-dua | input */
+    grid-template-columns: auto 10px 1fr; /* label | titik-dua | input */
     grid-row-gap: 10px;
     max-width: 400px;
     margin-bottom: 1em;
     align-items: center;
   }
-  form label {
-    text-align: left;           /* teks label rata kiri */
-    padding-right: 4px;
-  }
-  form .colon {
-    text-align: center;         /* titik-dua sejajar vertikal */
-  }
+  form label { text-align: left; padding-right: 4px; }
+  form .colon { text-align: center; }
+  /* lebar input jadi 50% dari form */
   form input {
-    width: 100%;
+    width: 50%;
     padding: 4px 6px;
+    box-sizing: border-box;
   }
-  table { border-collapse: collapse; width: 100%; margin-top: 1em; }
-  th, td { border: 1px solid #ccc; padding: 6px; text-align: left; }
-  th { background: #f0f0f0; }
-  #total { margin-top:1em; font-weight: bold; }
-  #download { margin-top:1em; display:none; }
-  #hasilContainer { display:none; margin-top:1.5em; }
 </style>
-<!-- jsPDF + autotable -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
-</head>
-<body>
-<h1>Index AR PBC</h1>
 
 <form id="filterForm">
   <label for="lokasi">Lokasi</label><div class="colon">:</div>
