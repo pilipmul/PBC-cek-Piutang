@@ -6,74 +6,99 @@
 <title>Index AR PBC</title>
 <style>
   body { font-family: Arial, sans-serif; }
-  .form-container {
-    display: inline-block;
-    text-align: left;
+
+  /* form label rata kiri dengan titik-dua sejajar */
+  form {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 8px 12px;
+    max-width: 400px;
+    margin: 0 auto;
   }
-  .form-row {
-    display: flex;
-    align-items: center;
-    margin-bottom: 10px;
-  }
-  .form-row label {
-    width: 90px;              /* jarak rata kiri sama untuk semua label */
+  form label {
     text-align: right;
-    margin-right: 8px;
+    padding-right: 6px;
   }
-  .form-row input {
-    width: 150px;             /* setengah panjang sebelumnya */
-    padding: 4px;
-  }
-  #filterForm button {
-    width: 75px;              /* tombol setengah lebar kolom input */
+  form input {
+    width: 50%;              /* setengah lebar form */
     padding: 6px;
-    display: block;
-    margin: 12px auto;        /* center */
+    box-sizing: border-box;
   }
+
+  /* tombol Cari setengah lebar kolom input dan center */
+  #filterForm button[type="submit"] {
+    grid-column: 1 / -1;
+    width: 50%;
+    margin: 12px auto;
+    padding: 8px 0;
+    background: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  #filterForm button[type="submit"]:hover {
+    background: #45a049;
+  }
+
   table { border-collapse: collapse; width: 100%; margin-top: 1em; }
   th, td { border: 1px solid #ccc; padding: 6px; text-align: left; }
   th { background: #f0f0f0; }
   #total { margin-top:1em; font-weight: bold; }
-  #download { margin-top:1em; display:none; }
+
+  /* Tombol Download PDF */
+  #download {
+    display: none;
+    width: 50%;
+    max-width: 200px;
+    margin: 1em auto;
+    padding: 10px 0;
+    text-align: center;
+    background: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  #download:hover { background: #45a049; }
+
+  /* footer tetap di bawah tengah */
   footer {
     position: fixed;
-    bottom: 10px;
+    bottom: 8px;
+    left: 0;
     width: 100%;
     text-align: center;
     font-size: 0.9em;
     color: #666;
   }
 </style>
-<!-- jsPDF + autotable -->
+<!-- pustaka jsPDF + autotable -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
 </head>
 <body>
+<h1 style="text-align:center;">Index AR PBC</h1>
 
-<h1>Index AR PBC</h1>
+<form id="filterForm">
+  <label for="lokasi">Lokasi :</label>
+  <input type="text" id="lokasi" required>
 
-<form id="filterForm" class="form-container">
-  <div class="form-row">
-    <label for="lokasi">Lokasi :</label>
-    <input type="text" id="lokasi" required>
-  </div>
-  <div class="form-row">
-    <label for="tahun">Tahun :</label>
-    <input type="number" id="tahun" required>
-  </div>
-  <div class="form-row">
-    <label for="password">Password :</label>
-    <input type="password" id="password" required>
-  </div>
+  <label for="tahun">Tahun :</label>
+  <input type="number" id="tahun" required>
+
+  <label for="password">Password :</label>
+  <input type="password" id="password" required>
+
   <button type="submit">Cari</button>
 </form>
 
+<!-- tabel hasil awalnya disembunyikan -->
 <div id="hasilContainer" style="display:none;">
-  <h2>Hasil:</h2>
   <table id="hasilTable">
     <thead>
       <tr>
-        <th>No</th>
+        <th>No.</th>
         <th>No. Faktur</th>
         <th>Tgl Faktur</th>
         <th>No. Pelanggan</th>
@@ -87,22 +112,21 @@
     <tbody id="hasilBody"></tbody>
   </table>
   <div id="total"></div>
-  <button id="download">Download PDF</button>
 </div>
 
+<button id="download">Download PDF</button>
 <footer>PT. Putra Citanusa @ 2025</footer>
 
 <script>
-const MASTER_PWD = "master123"; // ganti sesuai kebutuhan
 const SHEET_URLS = [
   "https://docs.google.com/spreadsheets/d/e/2PACX-1vT-PAf-G7kujpAjGhWROCvIrQ2gxn4MPjiCdbmYeowwjox00VKu2mq5cVFkgSUNg91tzJXfPHF34np7/pub?gid=126462838&single=true&output=csv",
-  "https://docs.google.com/spreadsheets/d/e/XXX2/pub?gid=0&single=true&output=csv",
-  "https://docs.google.com/spreadsheets/d/e/XXX3/pub?gid=0&single=true&output=csv"
+  "URL_CSV_AR_2024",
+  "URL_CSV_AR_2025"
 ];
+const MASTER_PASSWORD = "master123"; // ganti sesuai kebutuhan
 
 document.getElementById('filterForm').addEventListener('submit', e => {
   e.preventDefault();
-
   const lokasi = document.getElementById('lokasi').value.trim().toLowerCase();
   const tahun  = document.getElementById('tahun').value.trim();
   const pass   = document.getElementById('password').value.trim();
@@ -117,23 +141,23 @@ document.getElementById('filterForm').addEventListener('submit', e => {
       });
 
       const header = allRows[0].map(h => h.trim());
-      const iNoFak = header.indexOf('No. Faktur');
-      const iTglFak = header.indexOf('Tgl Faktur');
-      const iNoPel = header.indexOf('No. Pelanggan');
+      const iNoFak   = header.indexOf('No. Faktur');
+      const iTglFak  = header.indexOf('Tgl Faktur');
+      const iNoPel   = header.indexOf('No. Pelanggan');
       const iNamaPel = header.indexOf('Nama Pelanggan');
-      const iNilai = header.indexOf('Nilai Faktur');
-      const iTerutang = header.indexOf('Terutang');
-      const iTglBayar = header.indexOf('Tanggal Bayar');
-      const iKet = header.indexOf('Keterangan');
-      const iPwd = header.indexOf('Password');
+      const iNilai   = header.indexOf('Nilai Faktur');
+      const iTerutang= header.indexOf('Terutang');
+      const iTglBayar= header.indexOf('Tanggal Bayar');
+      const iKet     = header.indexOf('Keterangan');
+      const iPass    = header.indexOf('Password');
 
       const hasil = allRows.slice(1).filter(r => {
         const noPel = r[iNoPel]?.trim().toLowerCase();
-        const tgl = r[iTglFak]?.trim();
-        const tahunFak = tgl && tgl.split(/[./]/)[2];
-        const pwdLok = r[iPwd]?.trim();
-        const passOK = (pass === MASTER_PWD) || (pass === pwdLok);
-        return noPel === lokasi && tahunFak === tahun && passOK;
+        const tgl   = r[iTglFak]?.trim();
+        const tahunFak = tgl && tgl.split(/[./-]/)[2];
+        const passSheet = r[iPass]?.trim();
+        return noPel === lokasi && tahunFak === tahun &&
+               (pass === MASTER_PASSWORD || pass === passSheet);
       });
 
       const container = document.getElementById('hasilContainer');
@@ -145,56 +169,66 @@ document.getElementById('filterForm').addEventListener('submit', e => {
       container.style.display = 'none';
 
       if (hasil.length === 0) {
-        alert('Data tidak ditemukan atau password salah.');
+        alert("Data tidak ditemukan atau password salah");
         return;
       }
 
       container.style.display = 'block';
-      let totalTerutang = 0, totalNilai = 0;
-      hasil.forEach((r,idx) => {
+
+      let totalTerutang = 0;
+      let totalNilai = 0;
+      hasil.forEach((r, idx) => {
         const tr = document.createElement('tr');
-        const tdNo = document.createElement('td'); tdNo.textContent = idx+1;
-        tr.appendChild(tdNo);
-        [iNoFak,iTglFak,iNoPel,iNamaPel,iNilai,iTerutang,iTglBayar,iKet].forEach(idx2 => {
+        const addCell = (txt) => {
           const td = document.createElement('td');
-          td.textContent = r[idx2] || '';
+          td.textContent = txt || '';
           tr.appendChild(td);
-        });
+        };
+        addCell(idx + 1);
+        [iNoFak,iTglFak,iNoPel,iNamaPel,iNilai,iTerutang,iTglBayar,iKet]
+          .forEach(idxCol => addCell(r[idxCol]));
         body.appendChild(tr);
         totalTerutang += parseFloat(r[iTerutang]) || 0;
-        totalNilai += parseFloat(r[iNilai]) || 0;
+        totalNilai    += parseFloat(r[iNilai]) || 0;
       });
 
-      totalDiv.textContent = "Total Nilai Faktur: Rp " + totalNilai.toLocaleString('id-ID') +
-                             " | Total Terutang: Rp " + totalTerutang.toLocaleString('id-ID');
+      totalDiv.textContent =
+        "Total Nilai Faktur: Rp " + totalNilai.toLocaleString('id-ID') +
+        " | Total Terutang: Rp " + totalTerutang.toLocaleString('id-ID');
 
-      document.getElementById('download').style.display = 'inline-block';
+      document.getElementById('download').style.display = 'block';
     })
     .catch(err => {
       console.error(err);
-      alert('Gagal mengambil data.');
+      alert("Gagal mengambil data");
     });
 });
 
-// Download PDF dengan tanggal cetak di kanan atas
+// Download PDF
 document.getElementById('download').addEventListener('click', () => {
   const { jsPDF } = window.jspdf;
-  const doc = new jsPDF({orientation:'landscape'});
+  if (!jsPDF) { alert("jsPDF belum termuat"); return; }
 
+  const doc = new jsPDF({orientation:'landscape'});
   const today = new Date();
   const bulan = today.toLocaleString('id-ID',{month:'long'});
   const tglCetak = `Dicetak pada tanggal ${today.getDate()} - ${bulan} - ${today.getFullYear()}`;
 
   doc.text("Index AR PBC", 14, 15);
-  // posisi kanan atas
   const pageWidth = doc.internal.pageSize.getWidth();
-  const textWidth = doc.getTextWidth(tglCetak);
-  doc.text(tglCetak, pageWidth - textWidth - 14, 15);
+  doc.text(tglCetak, pageWidth - doc.getTextWidth(tglCetak) - 14, 15);
 
   doc.autoTable({ html: '#hasilTable', startY: 25 });
-  const finalY = doc.lastAutoTable.finalY + 10;
+
+  const finalY = (doc.lastAutoTable?.finalY || 25) + 10;
   const totalText = document.getElementById('total').textContent;
   doc.text(totalText, 14, finalY);
+
+  // footer
+  const footerText = "PT. Putra Citanusa @ 2025";
+  doc.text(footerText,
+           (pageWidth - doc.getTextWidth(footerText)) / 2,
+           doc.internal.pageSize.getHeight() - 10);
 
   doc.save("Index_AR_PBC.pdf");
 });
