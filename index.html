@@ -27,6 +27,9 @@
   <label>Tahun :
     <input type="number" id="tahun" required>
   </label><br><br>
+  <label>Password :
+    <input type="password" id="password" required>
+  </label><br><br>
   <button type="submit">Cari</button>
 </form>
 
@@ -52,17 +55,22 @@
 </div>
 
 <script>
+// ==== KONFIGURASI ====
 const SHEET_URLS = [
-  "https://docs.google.com/spreadsheets/d/e/2PACX-1vT-PAf-G7kujpAjGhWROCvIrQ2gxn4MPjiCdbmYeowwjox00VKu2mq5cVFkgSUNg91tzJXfPHF34np7/pub?gid=126462838&single=true&output=csv",
-  "https://docs.google.com/spreadsheets/d/e/2PACX-1vT-PAf-G7kujpAjGhWROCvIrQ2gxn4MPjiCdbmYeowwjox00VKu2mq5cVFkgSUNg91tzJXfPHF34np7/pub?gid=2117938894&single=true&output=csv",
-  "URL_CSV_AR_2025" // tambahkan URL sheet lain jika diperlukan
+  "URL_CSV_AR_2023",
+  "URL_CSV_AR_2024",
+  "URL_CSV_AR_2025"
 ];
+// Master password global
+const MASTER_PASSWORD = "Master123";
+// =====================
 
 document.getElementById('filterForm').addEventListener('submit', e => {
   e.preventDefault();
 
-  const lokasi = document.getElementById('lokasi').value.trim().toLowerCase();
-  const tahun  = document.getElementById('tahun').value.trim();
+  const lokasi   = document.getElementById('lokasi').value.trim().toLowerCase();
+  const tahun    = document.getElementById('tahun').value.trim();
+  const password = document.getElementById('password').value.trim();
 
   Promise.all(SHEET_URLS.map(url => fetch(url).then(r => r.text())))
     .then(allCsv => {
@@ -73,7 +81,7 @@ document.getElementById('filterForm').addEventListener('submit', e => {
         allRows.push(...rows.slice(1));
       });
 
-      const header = allRows[0].map(h => h.trim());
+      const header    = allRows[0].map(h => h.trim());
       const iNoFak    = header.indexOf('No. Faktur');
       const iTglFak   = header.indexOf('Tgl Faktur');
       const iNoPel    = header.indexOf('No. Pelanggan');
@@ -82,12 +90,13 @@ document.getElementById('filterForm').addEventListener('submit', e => {
       const iTerutang = header.indexOf('Terutang');
       const iTglBayar = header.indexOf('Tanggal Bayar');
       const iKet      = header.indexOf('Keterangan');
+      const iPass     = header.indexOf('Password'); // kolom password di sheet
 
-      // filter hanya lokasi & tahun
       const hasil = allRows.slice(1).filter(r => {
-        const noPel   = r[iNoPel]?.trim().toLowerCase();
-        const tgl     = r[iTglFak]?.trim();
+        const noPel    = r[iNoPel]?.trim().toLowerCase();
+        const tgl      = r[iTglFak]?.trim();
         const tahunFak = tgl && tgl.split(/[./]/)[2];
+        // cocok lokasi & tahun
         return noPel === lokasi && tahunFak === tahun;
       });
 
@@ -100,6 +109,13 @@ document.getElementById('filterForm').addEventListener('submit', e => {
 
       if (hasil.length === 0) {
         alert('Data tidak ditemukan');
+        return;
+      }
+
+      // cek password: harus cocok dengan salah satu password lokasi ATAU master password
+      const lokasiPassword = hasil[0][iPass]?.trim();
+      if (password !== MASTER_PASSWORD && password !== lokasiPassword) {
+        alert('Password salah untuk lokasi tersebut');
         return;
       }
 
