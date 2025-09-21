@@ -5,7 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Index AR PBC</title>
 <style>
-  body { font-family: Arial, sans-serif; }
+  body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
 
   /* ===== Form ===== */
   form {
@@ -19,27 +25,35 @@
   form label { text-align: left; }
   form .colon { text-align: center; }
   form input {
-    width: 50%;               /* kotak pengisian setengah lebar form */
+    width: 50%;
     padding: 4px 6px;
     box-sizing: border-box;
   }
   /* Tombol cari setengah lebar input dan center */
   .btn-wrapper {
-    grid-column: 1 / 4;       /* span full width grid */
+    grid-column: 1 / 4;
     text-align: center;
   }
   form button {
-    width: 25%;              /* setengah dari input (input 50% form) */
+    width: 25%;
     padding: 6px 0;
   }
 
   /* ===== Tabel ===== */
-  #hasilSection { display: none; margin-top:1em; }
+  #hasilSection { display: none; margin-top:1em; flex:1; }
   table { border-collapse: collapse; width: 100%; margin-top: 1em; }
   th, td { border: 1px solid #ccc; padding: 6px; text-align: left; }
   th { background: #f0f0f0; }
   #total { margin-top:1em; font-weight: bold; }
   #download { margin-top:1em; display:none; }
+
+  /* ===== Footer ===== */
+  footer {
+    text-align: left;
+    padding: 10px;
+    font-size: 0.9em;
+    color: #666;
+  }
 </style>
 <!-- jsPDF + autotable -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -63,7 +77,6 @@
   </div>
 </form>
 
-<!-- Hasil pencarian -->
 <section id="hasilSection">
   <h2>Hasil:</h2>
   <table id="hasilTable">
@@ -85,6 +98,8 @@
   <div id="total"></div>
   <button id="download">Download PDF</button>
 </section>
+
+<footer>PT. Putra Citanusa @ 2025</footer>
 
 <script>
 const MASTER_PASS = "master123"; // ganti sesuai kebutuhan
@@ -180,14 +195,13 @@ document.getElementById('filterForm').addEventListener('submit', e => {
     });
 });
 
-// Download PDF dengan total piutang
+// Download PDF dengan footer
 document.getElementById('download').addEventListener('click', () => {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ orientation: 'landscape' });
   doc.text("Index AR PBC", 14, 15);
   doc.autoTable({ html: '#hasilTable', startY: 20 });
 
-  // tambahkan total setelah tabel
   const finalY = doc.lastAutoTable.finalY + 10;
   doc.setFontSize(12);
   doc.text(
@@ -195,6 +209,11 @@ document.getElementById('download').addEventListener('click', () => {
     14,
     finalY
   );
+
+  // footer di kiri bawah halaman PDF
+  const pageHeight = doc.internal.pageSize.getHeight();
+  doc.setFontSize(10);
+  doc.text("PT. Putra Citanusa @ 2025", 14, pageHeight - 10);
 
   doc.save("Index_AR_PBC.pdf");
 });
