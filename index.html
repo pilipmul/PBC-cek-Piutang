@@ -11,12 +11,13 @@
     min-height: 100vh;
     display: flex;
     flex-direction: column;
+    padding-bottom: 40px; /* beri ruang agar footer tidak menutupi konten */
   }
 
   /* ===== Form ===== */
   form {
     display: grid;
-    grid-template-columns: auto 10px 1fr; /* label | colon | input */
+    grid-template-columns: auto 10px 1fr;
     grid-row-gap: 10px;
     max-width: 400px;
     margin-bottom: 1em;
@@ -29,7 +30,6 @@
     padding: 4px 6px;
     box-sizing: border-box;
   }
-  /* Tombol cari setengah lebar input dan center */
   .btn-wrapper {
     grid-column: 1 / 4;
     text-align: center;
@@ -47,12 +47,17 @@
   #total { margin-top:1em; font-weight: bold; }
   #download { margin-top:1em; display:none; }
 
-  /* ===== Footer ===== */
+  /* ===== Footer Tengah Bawah ===== */
   footer {
-    text-align: left;
-    padding: 10px;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    text-align: center;
+    padding: 8px 0;
     font-size: 0.9em;
     color: #666;
+    background: transparent; /* tetap transparan agar menyatu */
   }
 </style>
 <!-- jsPDF + autotable -->
@@ -195,7 +200,7 @@ document.getElementById('filterForm').addEventListener('submit', e => {
     });
 });
 
-// Download PDF dengan footer
+// Download PDF dengan footer di tengah bawah
 document.getElementById('download').addEventListener('click', () => {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ orientation: 'landscape' });
@@ -210,10 +215,13 @@ document.getElementById('download').addEventListener('click', () => {
     finalY
   );
 
-  // footer di kiri bawah halaman PDF
+  // Footer PDF di tengah bawah
+  const pageWidth  = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
+  const text = "PT. Putra Citanusa @ 2025";
+  const textWidth = doc.getTextWidth(text);
   doc.setFontSize(10);
-  doc.text("PT. Putra Citanusa @ 2025", 14, pageHeight - 10);
+  doc.text(text, (pageWidth - textWidth) / 2, pageHeight - 10);
 
   doc.save("Index_AR_PBC.pdf");
 });
