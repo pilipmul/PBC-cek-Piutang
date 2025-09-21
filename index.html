@@ -38,6 +38,7 @@
   <table id="hasilTable">
     <thead>
       <tr>
+        <th>No</th> <!-- Kolom nomor urut -->
         <th>No. Faktur</th>
         <th>Tgl Faktur</th>
         <th>No. Pelanggan</th>
@@ -90,13 +91,12 @@ document.getElementById('filterForm').addEventListener('submit', e => {
       const iTerutang = header.indexOf('Terutang');
       const iTglBayar = header.indexOf('Tanggal Bayar');
       const iKet      = header.indexOf('Keterangan');
-      const iPass     = header.indexOf('Password'); // kolom password di sheet
+      const iPass     = header.indexOf('Password');
 
       const hasil = allRows.slice(1).filter(r => {
         const noPel    = r[iNoPel]?.trim().toLowerCase();
         const tgl      = r[iTglFak]?.trim();
         const tahunFak = tgl && tgl.split(/[./]/)[2];
-        // cocok lokasi & tahun
         return noPel === lokasi && tahunFak === tahun;
       });
 
@@ -122,14 +122,21 @@ document.getElementById('filterForm').addEventListener('submit', e => {
       document.getElementById('hasilContainer').style.display = 'block';
 
       let totalTerutang = 0;
-      hasil.forEach(r => {
+      hasil.forEach((r, idx) => {
         const tr = document.createElement('tr');
-        [iNoFak,iTglFak,iNoPel,iNamaPel,iNilai,iTerutang,iTglBayar,iKet].forEach(idx => {
+
+        // Tambahkan nomor urut di kolom pertama
+        const tdNo = document.createElement('td');
+        tdNo.textContent = idx + 1;
+        tr.appendChild(tdNo);
+
+        [iNoFak,iTglFak,iNoPel,iNamaPel,iNilai,iTerutang,iTglBayar,iKet].forEach(idxCol => {
           const td = document.createElement('td');
-          td.textContent = r[idx] || '';
+          td.textContent = r[idxCol] || '';
           tr.appendChild(td);
         });
         body.appendChild(tr);
+
         totalTerutang += parseFloat(r[iTerutang]) || 0;
       });
 
@@ -144,7 +151,7 @@ document.getElementById('filterForm').addEventListener('submit', e => {
     });
 });
 
-// Download PDF
+// Download PDF dengan kolom nomor ikut
 document.getElementById('download').addEventListener('click', () => {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
