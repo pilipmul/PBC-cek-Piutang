@@ -7,21 +7,22 @@
 <style>
   body { font-family: Arial, sans-serif; }
   form {
-    max-width: 350px;
+    display: grid;
+    grid-template-columns: auto 10px 1fr; /* kolom: label | titik-dua | input */
+    grid-row-gap: 10px;
+    max-width: 400px;
     margin-bottom: 1em;
-  }
-  .form-row {
-    display: flex;
     align-items: center;
-    margin-bottom: 10px;
   }
-  .form-row label {
-    width: 90px;            /* lebar tetap agar titik-dua sejajar */
-    text-align: right;
-    margin-right: 8px;
+  form label {
+    text-align: left;           /* teks label rata kiri */
+    padding-right: 4px;
   }
-  .form-row input {
-    flex: 1;
+  form .colon {
+    text-align: center;         /* titik-dua sejajar vertikal */
+  }
+  form input {
+    width: 100%;
     padding: 4px 6px;
   }
   table { border-collapse: collapse; width: 100%; margin-top: 1em; }
@@ -39,18 +40,16 @@
 <h1>Index AR PBC</h1>
 
 <form id="filterForm">
-  <div class="form-row">
-    <label for="lokasi">Lokasi :</label>
-    <input type="text" id="lokasi" required>
-  </div>
-  <div class="form-row">
-    <label for="tahun">Tahun :</label>
-    <input type="number" id="tahun" required>
-  </div>
-  <div class="form-row">
-    <label for="password">Password :</label>
-    <input type="password" id="password" required>
-  </div>
+  <label for="lokasi">Lokasi</label><div class="colon">:</div>
+  <input type="text" id="lokasi" required>
+
+  <label for="tahun">Tahun</label><div class="colon">:</div>
+  <input type="number" id="tahun" required>
+
+  <label for="password">Password</label><div class="colon">:</div>
+  <input type="password" id="password" required>
+
+  <div></div><div></div>
   <button type="submit">Cari</button>
 </form>
 
@@ -87,7 +86,6 @@ let totalTerutangGlobal = 0;
 
 document.getElementById('filterForm').addEventListener('submit', e => {
   e.preventDefault();
-
   const lokasi   = document.getElementById('lokasi').value.trim().toLowerCase();
   const tahun    = document.getElementById('tahun').value.trim();
   const password = document.getElementById('password').value.trim();
@@ -121,8 +119,7 @@ document.getElementById('filterForm').addEventListener('submit', e => {
 
       const body = document.getElementById('hasilBody');
       body.innerHTML = '';
-      const totalDiv = document.getElementById('total');
-      totalDiv.textContent = '';
+      document.getElementById('total').textContent = '';
       document.getElementById('download').style.display = 'none';
       document.getElementById('hasilContainer').style.display = 'none';
       totalTerutangGlobal = 0;
@@ -142,44 +139,34 @@ document.getElementById('filterForm').addEventListener('submit', e => {
 
       hasil.forEach((r, idx) => {
         const tr = document.createElement('tr');
-        const tdNo = document.createElement('td');
-        tdNo.textContent = idx + 1;
-        tr.appendChild(tdNo);
-        [iNoFak,iTglFak,iNoPel,iNamaPel,iNilai,iTerutang,iTglBayar,iKet].forEach(idxCol => {
-          const td = document.createElement('td');
-          td.textContent = r[idxCol] || '';
-          tr.appendChild(td);
-        });
+        tr.innerHTML = `<td>${idx + 1}</td>
+                        <td>${r[iNoFak]||''}</td>
+                        <td>${r[iTglFak]||''}</td>
+                        <td>${r[iNoPel]||''}</td>
+                        <td>${r[iNamaPel]||''}</td>
+                        <td>${r[iNilai]||''}</td>
+                        <td>${r[iTerutang]||''}</td>
+                        <td>${r[iTglBayar]||''}</td>
+                        <td>${r[iKet]||''}</td>`;
         body.appendChild(tr);
         totalTerutangGlobal += parseFloat(r[iTerutang]) || 0;
       });
 
-      totalDiv.textContent = "Total Terutang: Rp " +
-        totalTerutangGlobal.toLocaleString('id-ID');
+      document.getElementById('total').textContent =
+        "Total Terutang: Rp " + totalTerutangGlobal.toLocaleString('id-ID');
 
       document.getElementById('download').style.display = 'inline-block';
     })
-    .catch(err => {
-      console.error(err);
-      alert('Gagal mengambil data');
-    });
+    .catch(err => { console.error(err); alert('Gagal mengambil data'); });
 });
 
 document.getElementById('download').addEventListener('click', () => {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ orientation: "landscape" });
   doc.text("Index AR PBC", 14, 15);
-  doc.autoTable({
-    html: '#hasilTable',
-    startY: 20,
-    theme: 'grid',
-    styles: { fontSize: 8 }
-  });
-  doc.text(
-    "Total Terutang: Rp " + totalTerutangGlobal.toLocaleString('id-ID'),
-    14,
-    doc.lastAutoTable.finalY + 10
-  );
+  doc.autoTable({ html: '#hasilTable', startY: 20, theme: 'grid', styles: { fontSize: 8 } });
+  doc.text("Total Terutang: Rp " + totalTerutangGlobal.toLocaleString('id-ID'),
+           14, doc.lastAutoTable.finalY + 10);
   doc.save("Index_AR_PBC.pdf");
 });
 </script>
