@@ -6,6 +6,24 @@
 <title>Index AR PBC</title>
 <style>
   body { font-family: Arial, sans-serif; }
+  form {
+    max-width: 350px;
+    margin-bottom: 1em;
+  }
+  .form-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+  .form-row label {
+    width: 90px;            /* lebar tetap agar titik-dua sejajar */
+    text-align: right;
+    margin-right: 8px;
+  }
+  .form-row input {
+    flex: 1;
+    padding: 4px 6px;
+  }
   table { border-collapse: collapse; width: 100%; margin-top: 1em; }
   th, td { border: 1px solid #ccc; padding: 6px; text-align: left; }
   th { background: #f0f0f0; }
@@ -21,15 +39,18 @@
 <h1>Index AR PBC</h1>
 
 <form id="filterForm">
-  <label>Lokasi :
+  <div class="form-row">
+    <label for="lokasi">Lokasi :</label>
     <input type="text" id="lokasi" required>
-  </label><br><br>
-  <label>Tahun :
+  </div>
+  <div class="form-row">
+    <label for="tahun">Tahun :</label>
     <input type="number" id="tahun" required>
-  </label><br><br>
-  <label>Password :
+  </div>
+  <div class="form-row">
+    <label for="password">Password :</label>
     <input type="password" id="password" required>
-  </label><br><br>
+  </div>
   <button type="submit">Cari</button>
 </form>
 
@@ -56,16 +77,13 @@
 </div>
 
 <script>
-// ====== KONFIGURASI ======
 const SHEET_URLS = [
   "https://docs.google.com/spreadsheets/d/e/2PACX-1vT-PAf-G7kujpAjGhWROCvIrQ2gxn4MPjiCdbmYeowwjox00VKu2mq5cVFkgSUNg91tzJXfPHF34np7/pub?gid=126462838&single=true&output=csv",
   "URL_CSV_AR_2024",
   "URL_CSV_AR_2025"
 ];
 const MASTER_PASSWORD = "Master123";
-// =========================
-
-let totalTerutangGlobal = 0; // simpan total untuk PDF
+let totalTerutangGlobal = 0;
 
 document.getElementById('filterForm').addEventListener('submit', e => {
   e.preventDefault();
@@ -114,7 +132,6 @@ document.getElementById('filterForm').addEventListener('submit', e => {
         return;
       }
 
-      // cek password
       const lokasiPassword = hasil[0][iPass]?.trim();
       if (password !== MASTER_PASSWORD && password !== lokasiPassword) {
         alert('Password salah untuk lokasi tersebut');
@@ -125,18 +142,15 @@ document.getElementById('filterForm').addEventListener('submit', e => {
 
       hasil.forEach((r, idx) => {
         const tr = document.createElement('tr');
-
         const tdNo = document.createElement('td');
         tdNo.textContent = idx + 1;
         tr.appendChild(tdNo);
-
         [iNoFak,iTglFak,iNoPel,iNamaPel,iNilai,iTerutang,iTglBayar,iKet].forEach(idxCol => {
           const td = document.createElement('td');
           td.textContent = r[idxCol] || '';
           tr.appendChild(td);
         });
         body.appendChild(tr);
-
         totalTerutangGlobal += parseFloat(r[iTerutang]) || 0;
       });
 
@@ -151,10 +165,9 @@ document.getElementById('filterForm').addEventListener('submit', e => {
     });
 });
 
-// Download PDF: Landscape + total terutang
 document.getElementById('download').addEventListener('click', () => {
   const { jsPDF } = window.jspdf;
-  const doc = new jsPDF({ orientation: "landscape" }); // <-- landscape
+  const doc = new jsPDF({ orientation: "landscape" });
   doc.text("Index AR PBC", 14, 15);
   doc.autoTable({
     html: '#hasilTable',
@@ -162,7 +175,6 @@ document.getElementById('download').addEventListener('click', () => {
     theme: 'grid',
     styles: { fontSize: 8 }
   });
-  // Tambahkan total di bawah tabel
   doc.text(
     "Total Terutang: Rp " + totalTerutangGlobal.toLocaleString('id-ID'),
     14,
