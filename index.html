@@ -41,6 +41,7 @@
         <th>Nama Pelanggan</th>
         <th>Nilai Faktur</th>
         <th>Terutang</th>
+        <th>Tanggal Bayar</th>
         <th>Keterangan</th>
       </tr>
     </thead>
@@ -73,13 +74,14 @@ document.getElementById('filterForm').addEventListener('submit', e => {
       });
 
       const header = allRows[0].map(h => h.trim());
-      const iNoFak   = header.indexOf('No. Faktur');
-      const iTglFak  = header.indexOf('Tgl Faktur');
-      const iNoPel   = header.indexOf('No. Pelanggan');
-      const iNamaPel = header.indexOf('Nama Pelanggan');
-      const iNilai   = header.indexOf('Nilai Faktur');
-      const iTerutang= header.indexOf('Terutang');
-      const iKet     = header.indexOf('Keterangan');
+      const iNoFak    = header.indexOf('No. Faktur');
+      const iTglFak   = header.indexOf('Tgl Faktur');
+      const iNoPel    = header.indexOf('No. Pelanggan');
+      const iNamaPel  = header.indexOf('Nama Pelanggan');
+      const iNilai    = header.indexOf('Nilai Faktur');
+      const iTerutang = header.indexOf('Terutang');
+      const iTglBayar = header.indexOf('Tanggal Bayar');
+      const iKet      = header.indexOf('Keterangan');
 
       // filter hanya lokasi & tahun
       const hasil = allRows.slice(1).filter(r => {
@@ -106,7 +108,7 @@ document.getElementById('filterForm').addEventListener('submit', e => {
       let totalTerutang = 0;
       hasil.forEach(r => {
         const tr = document.createElement('tr');
-        [iNoFak,iTglFak,iNoPel,iNamaPel,iNilai,iTerutang,iKet].forEach(idx => {
+        [iNoFak,iTglFak,iNoPel,iNamaPel,iNilai,iTerutang,iTglBayar,iKet].forEach(idx => {
           const td = document.createElement('td');
           td.textContent = r[idx] || '';
           tr.appendChild(td);
