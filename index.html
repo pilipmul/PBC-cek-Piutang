@@ -214,21 +214,26 @@ document.getElementById('download').addEventListener('click', () => {
   const bulan = today.toLocaleString('id-ID',{month:'long'});
   const tglCetak = `Dicetak pada tanggal ${today.getDate()} - ${bulan} - ${today.getFullYear()}`;
 
+  doc.setFontSize(16);                 // judul lebih besar
   doc.text("Index AR PBC", 14, 15);
+
+  // --- ubah ukuran font header tanggal agar sama dengan tabel (≈10pt) ---
+  doc.setFontSize(10);                 // <== tambahkan baris ini
   const pageWidth = doc.internal.pageSize.getWidth();
   doc.text(tglCetak, pageWidth - doc.getTextWidth(tglCetak) - 14, 15);
 
+  // tabel dan total
   doc.autoTable({ html: '#hasilTable', startY: 25 });
-
   const finalY = (doc.lastAutoTable?.finalY || 25) + 10;
-  const totalText = document.getElementById('total').textContent;
-  doc.text(totalText, 14, finalY);
+  doc.text(document.getElementById('total').textContent, 14, finalY);
 
   // footer
   const footerText = "PT. Putra Citanusa @ 2025";
-  doc.text(footerText,
-           (pageWidth - doc.getTextWidth(footerText)) / 2,
-           doc.internal.pageSize.getHeight() - 10);
+  doc.text(
+    footerText,
+    (pageWidth - doc.getTextWidth(footerText)) / 2,
+    doc.internal.pageSize.getHeight() - 10
+  );
 
   doc.save("Index_AR_PBC.pdf");
 });
