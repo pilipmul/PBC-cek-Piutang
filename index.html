@@ -146,7 +146,7 @@ document.getElementById('filterForm').addEventListener('submit', e => {
     .then(allCsv => {
       const allRows = [];
       allCsv.forEach((csv, idx) => {
-        const rows = csv.trim().split(/\r?\n/).map(r => r.split(','));
+        const rows = Papa.parse(csv.trim(), {skipEmptyLines: true}).data;
         if (idx === 0) allRows.push(rows[0]);
         allRows.push(...rows.slice(1));
       });
