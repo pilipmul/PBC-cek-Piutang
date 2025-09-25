@@ -3,243 +3,247 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Cek Piutang PT. Putra Citanusa</title>
+<title>Index AR PBC</title>
 <style>
-  body{
-    font-family: Arial, sans-serif;
-    background:#f0f2f5;
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    padding:20px;
-  }
-  h1{
-    color:#1877f2;
-    margin-bottom:20px;
-  }
-  .form-box{
-    background:#fff;
-    padding:20px;
-    border-radius:8px;
-    box-shadow:0 2px 6px rgba(0,0,0,0.2);
-    width:320px;
-  }
-  .form-group{
-    margin-bottom:15px;
-  }
-  .form-group input{
-    width:100%;
-    padding:10px;
-    border:1px solid #ccc;
-    border-radius:5px;
-    box-sizing:border-box;
-    font-size:14px;
-  }
-  .form-group input::placeholder{
-    color:#888;
-  }
-  .btn{
-    display:block;
-    margin:0 auto;
-    background:#1877f2;
-    color:#fff;
-    padding:8px 0;
-    width:50%;
-    border:none;
-    border-radius:5px;
-    cursor:pointer;
-    font-size:16px;
-    text-align:center;
-  }
-  .btn:hover{background:#166fe5;}
+  body {
+  font-family: Arial, sans-serif;
+  background: #f0f2f5;
+  margin: 0;
+  padding: 0;
+}
 
-  table{
-    border-collapse:collapse;
-    width:100%;
-    margin-top:20px;
-    background:#fff;
-  }
-  th, td{
-    border:1px solid #ccc;
-    padding:6px;
-    text-align:left;
-    font-size:14px;
-  }
-  th{
-    background:#1877f2; /* warna header sama dengan PDF */
-    color:#fff;
-  }
-  #downloadBtn{
-    margin-top:15px;
-    padding:8px 20px;
-    background:#1877f2;
-    color:#fff;
-    border:none;
-    border-radius:5px;
-    cursor:pointer;
-    display:none;
-  }
-  #downloadBtn:hover{background:#166fe5;}
+/* === Kotak form gaya Facebook === */
+#filterForm {
+  background: #fff;
+  max-width: 360px;      /* lebar kotak form */
+  margin: 60px auto;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  display: flex;
+  flex-direction: column;
+  align-items: center;   /* isi tetap rata tengah */
+  gap: 12px;
+}
+#filterForm input {
+  width: 280px;          /* ❗ lebih sempit dari kotak form */
+  padding: 10px;
+  border: 1px solid #dddfe2;
+  border-radius: 6px;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+#filterForm input:focus {
+  outline: none;
+  border-color: #1877f2;
+  box-shadow: 0 0 0 1px #1877f2;
+}
+#filterForm button[type="submit"] {
+  background: #1877f2;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 12px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  width: 150px;          /* tombol tetap lebih kecil dan center */
+}
+#filterForm button[type="submit"]:hover { background: #166fe5; }
 
-  #backBtn{
-    margin-top:20px;
-    padding:8px 20px;
-    background:#1877f2;
-    color:#fff;
-    border:none;
-    border-radius:5px;
-    cursor:pointer;
-    display:none;
-  }
+/* tombol tambahan */
+#download, #backBtn {
+  display: none;
+  width: 200px;
+  margin: 20px auto;
+  padding: 12px;
+  text-align: center;
+  border: none;
+  border-radius: 6px;
+  color: #fff;
+  font-weight: bold;
+  cursor: pointer;
+}
+#download { background: #42b72a; }
+#download:hover { background: #36a420; }
+#backBtn { background: #1877f2; }
+#backBtn:hover { background: #166fe5; }
 
-  footer{
-    position:fixed;
-    bottom:10px;
-    left:0;
-    width:100%;
-    text-align:center;
-    color:#555;
-    font-size:14px;
-  }
+table { border-collapse: collapse; width: 100%; margin-top: 1em; background:#fff; }
+th, td { border: 1px solid #ccc; padding: 6px; text-align: left; }
+th { background: #f0f0f0; }
+#total { margin-top:1em; font-weight: bold; text-align:center; }
+
+footer {
+  text-align: center;
+  margin-top: 40px;
+  font-size: 0.9em;
+  color: #666;
+}
 </style>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 </head>
 <body>
+<h1 style="text-align:center;margin-top:20px;">Index AR PBC</h1>
 
-<h1>Cek Piutang</h1>
+<form id="filterForm">
+  <input type="text" id="lokasi" placeholder="Lokasi" required>
+  <input type="number" id="tahun" placeholder="Tahun" required>
+  <input type="password" id="password" placeholder="Password" required>
+  <button type="submit">Cari</button>
+</form>
 
-<div class="form-box" id="searchForm">
-  <div class="form-group">
-    <input type="text" id="lokasi" placeholder="Lokasi">
-  </div>
-  <div class="form-group">
-    <input type="number" id="tahun" placeholder="Tahun">
-  </div>
-  <div class="form-group">
-    <input type="password" id="password" placeholder="Password">
-  </div>
-  <button class="btn" onclick="cariData()">Cari</button>
+<div id="hasilContainer" style="display:none;max-width:95%;margin:auto;">
+  <table id="hasilTable">
+    <thead>
+      <tr>
+        <th>No.</th>
+        <th>No. Faktur</th>
+        <th>Tgl Faktur</th>
+        <th>No. Pelanggan</th>
+        <th>Nama Pelanggan</th>
+        <th>Nilai Faktur</th>
+        <th>Terutang</th>
+        <th>Tanggal Bayar</th>
+        <th>Keterangan</th>
+      </tr>
+    </thead>
+    <tbody id="hasilBody"></tbody>
+  </table>
+  <div id="total"></div>
 </div>
 
-<div id="resultContainer" style="width:100%; max-width:1000px;"></div>
-<button id="downloadBtn" onclick="downloadPDF()">Download PDF</button>
-<button id="backBtn" onclick="kembali()">Kembali</button>
+<button id="download">Download PDF</button>
+<button id="backBtn">Kembali</button>
 
 <footer>PT. Putra Citanusa @ 2025</footer>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
 <script>
-const { jsPDF } = window.jspdf;
+const SHEET_URLS = [
+  "https://docs.google.com/spreadsheets/d/e/2PACX-1vT-PAf-G7kujpAjGhWROCvIrQ2gxn4MPjiCdbmYeowwjox00VKu2mq5cVFkgSUNg91tzJXfPHF34np7/pub?gid=126462838&single=true&output=csv",
+  "URL_CSV_AR_2024",
+  "URL_CSV_AR_2025"
+];
+const MASTER_PASSWORD = "master123";
 
-// ==== Ganti URL berikut dengan URL publik Google Sheets JSON/CSV yang sudah disiapkan ====
-const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vT-PAf-G7kujpAjGhWROCvIrQ2gxn4MPjiCdbmYeowwjox00VKu2mq5cVFkgSUNg91tzJXfPHF34np7/pub?gid=126462838&single=true&output=tsv";
-
-async function fetchData() {
-  const res = await fetch(SHEET_URL);
-  const data = await res.json();
-  // Pastikan parsing sesuai format Anda
-  return data;
-}
-
-async function cariData(){
-  const lokasi = document.getElementById('lokasi').value.trim();
+document.getElementById('filterForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const lokasi = document.getElementById('lokasi').value.trim().toLowerCase();
   const tahun  = document.getElementById('tahun').value.trim();
-  const password = document.getElementById('password').value.trim();
+  const pass   = document.getElementById('password').value.trim();
 
-  if(!lokasi || !tahun || !password){
-    alert('Isi semua kolom.');
-    return;
-  }
+  Promise.all(SHEET_URLS.map(url => fetch(url).then(r => r.text())))
+    .then(allCsv => {
+      const allRows = [];
+      allCsv.forEach((csv, idx) => {
+        const rows = Papa.parse(csv.trim(), {skipEmptyLines: true}).data;
+        if (idx === 0) allRows.push(rows[0]);
+        allRows.push(...rows.slice(1));
+      });
 
-  const rows = await fetchData();
+      const header = allRows[0].map(h => h.trim());
+      const iNoFak   = header.indexOf('No. Faktur');
+      const iTglFak  = header.indexOf('Tgl Faktur');
+      const iNoPel   = header.indexOf('No. Pelanggan');
+      const iNamaPel = header.indexOf('Nama Pelanggan');
+      const iNilai   = header.indexOf('Nilai Faktur');
+      const iTerutang= header.indexOf('Terutang');
+      const iTglBayar= header.indexOf('Tanggal Bayar');
+      const iKet     = header.indexOf('Keterangan');
+      const iPass    = header.indexOf('Password');
 
-  // filter lokasi, tahun dan password (atau master password)
-  const hasil = rows.filter(r=>{
-    const tglFaktur = r['Tgl Faktur'] || '';
-    const th = tglFaktur.slice(-4);
-    return r['No. Pelanggan']===lokasi &&
-           th===tahun &&
-           (r['Password']===password || password==="master123");
-  });
+      const hasil = allRows.slice(1).filter(r => {
+        const noPel = r[iNoPel]?.trim().toLowerCase();
+        const tgl   = r[iTglFak]?.trim();
+        const tahunFak = tgl && tgl.split(/[./-]/)[2];
+        const passSheet = r[iPass]?.trim();
+        return noPel === lokasi && tahunFak === tahun &&
+               (pass === MASTER_PASSWORD || pass === passSheet);
+      });
 
-  const container = document.getElementById('resultContainer');
-  container.innerHTML = '';
+      const form = document.getElementById('filterForm');
+      const container = document.getElementById('hasilContainer');
+      const body = document.getElementById('hasilBody');
+      const totalDiv = document.getElementById('total');
+      body.innerHTML = '';
+      totalDiv.textContent = '';
+      document.getElementById('download').style.display = 'none';
+      document.getElementById('backBtn').style.display = 'none';
+      container.style.display = 'none';
 
-  if(hasil.length===0){
-    alert("Data tidak ditemukan");
-    return;
-  }
+      if (hasil.length === 0) {
+        alert("Data tidak ditemukan atau password salah");
+        return;
+      }
 
-  // sembunyikan form, tampilkan tombol kembali
-  document.getElementById('searchForm').style.display='none';
-  document.getElementById('backBtn').style.display='inline-block';
-  document.getElementById('downloadBtn').style.display='inline-block';
+      form.style.display = 'none';
+      container.style.display = 'block';
+      document.getElementById('download').style.display = 'block';
+      document.getElementById('backBtn').style.display = 'block';
 
-  let total=0;
-  const table = document.createElement('table');
-  const thead = document.createElement('thead');
-  thead.innerHTML = `
-    <tr>
-      <th>No</th>
-      <th>No. Faktur</th>
-      <th>Tgl Faktur</th>
-      <th>No. Pelanggan</th>
-      <th>Nama Pelanggan</th>
-      <th>Nilai Faktur</th>
-      <th>Terutang</th>
-      <th>Tanggal Bayar</th>
-      <th>Keterangan</th>
-    </tr>`;
-  table.appendChild(thead);
+      let totalTerutang = 0;
+      let totalNilai = 0;
+      hasil.forEach((r, idx) => {
+        const tr = document.createElement('tr');
+        const addCell = txt => {
+          const td = document.createElement('td');
+          td.textContent = txt || '';
+          tr.appendChild(td);
+        };
+        addCell(idx + 1);
+        [iNoFak,iTglFak,iNoPel,iNamaPel,iNilai,iTerutang,iTglBayar,iKet]
+          .forEach(idxCol => addCell(r[idxCol]));
+        body.appendChild(tr);
+        totalTerutang += parseFloat(r[iTerutang]) || 0;
+        totalNilai    += parseFloat(r[iNilai]) || 0;
+      });
 
-  const tbody = document.createElement('tbody');
-  hasil.forEach((r,i)=>{
-    total += Number(r['Nilai Faktur']||0);
-    const row = document.createElement('tr');
-    row.innerHTML = `
-      <td>${i+1}</td>
-      <td>${r['No. Faktur']||''}</td>
-      <td>${r['Tgl Faktur']||''}</td>
-      <td>${r['No. Pelanggan']||''}</td>
-      <td>${r['Nama Pelanggan']||''}</td>
-      <td>${r['Nilai Faktur']||0}</td>
-      <td>${r['Terutang']||0}</td>
-      <td>${r['Tanggal Bayar']||''}</td>
-      <td>${r['Keterangan']||''}</td>`;
-    tbody.appendChild(row);
-  });
-  // total baris
-  const totalRow = document.createElement('tr');
-  totalRow.innerHTML = `<td colspan="5"><b>Total Piutang</b></td>
-                        <td><b>${total}</b></td>
-                        <td colspan="3"></td>`;
-  tbody.appendChild(totalRow);
-  table.appendChild(tbody);
-  container.appendChild(table);
-}
+      totalDiv.textContent =
+        "Total Nilai Faktur: Rp " + totalNilai.toLocaleString('id-ID') +
+        " | Total Terutang: Rp " + totalTerutang.toLocaleString('id-ID');
+    })
+    .catch(err => {
+      console.error(err);
+      alert("Gagal mengambil data");
+    });
+});
 
-function kembali(){
-  document.getElementById('searchForm').style.display='block';
-  document.getElementById('resultContainer').innerHTML='';
-  document.getElementById('downloadBtn').style.display='none';
-  document.getElementById('backBtn').style.display='none';
-}
+document.getElementById('backBtn').addEventListener('click', () => {
+  document.getElementById('hasilContainer').style.display = 'none';
+  document.getElementById('download').style.display = 'none';
+  document.getElementById('backBtn').style.display = 'none';
+  const form = document.getElementById('filterForm');
+  form.style.display = 'flex';
+  form.reset();
+});
 
-function downloadPDF(){
+// Download PDF
+document.getElementById('download').addEventListener('click', () => {
+  const { jsPDF } = window.jspdf;
+  if (!jsPDF) { alert("jsPDF belum termuat"); return; }
   const doc = new jsPDF({orientation:'landscape'});
-  const dateStr = new Date().toLocaleDateString('id-ID',
-                 {day:'2-digit', month:'long', year:'numeric'});
-  doc.setFontSize(12);
-  doc.text(`Dicetak pada tanggal ${dateStr}`, 250, 15, {align:'right'});
-
-  doc.autoTable({
-    html: '#resultContainer table',
-    startY: 25,
-    headStyles: {fillColor: [24,119,242]}, // sama seperti header web
-    styles: {fontSize:12}
-  });
-  doc.save('laporan-piutang.pdf');
-}
+  const today = new Date();
+  const bulan = today.toLocaleString('id-ID',{month:'long'});
+  const tglCetak = `Dicetak pada tanggal ${today.getDate()} - ${bulan} - ${today.getFullYear()}`;
+  doc.setFontSize(16);
+  doc.text("Index AR PBC", 14, 15);
+  doc.setFontSize(10);
+  const pageWidth = doc.internal.pageSize.getWidth();
+  doc.text(tglCetak, pageWidth - doc.getTextWidth(tglCetak) - 14, 15);
+  doc.autoTable({ html: '#hasilTable', startY: 25 });
+  const finalY = (doc.lastAutoTable?.finalY || 25) + 10;
+  doc.text(document.getElementById('total').textContent, 14, finalY);
+  const footerText = "PT. Putra Citanusa @ 2025";
+  doc.text(
+    footerText,
+    (pageWidth - doc.getTextWidth(footerText)) / 2,
+    doc.internal.pageSize.getHeight() - 10
+  );
+  doc.save("Index_AR_PBC.pdf");
+});
 </script>
 </body>
 </html>
