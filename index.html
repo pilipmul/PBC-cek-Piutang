@@ -6,78 +6,80 @@
 <title>Index AR PBC</title>
 <style>
   body {
-    font-family: Arial, sans-serif;
-    background: #f0f2f5;
-    margin: 0;
-    padding: 0;
-  }
+  font-family: Arial, sans-serif;
+  background: #f0f2f5;
+  margin: 0;
+  padding: 0;
+}
 
-  /* === Kotak form gaya Facebook === */
-  #filterForm {
-    background: #fff;
-    max-width: 360px;
-    margin: 60px auto;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
-  #filterForm input {
-    width: 100%;
-    padding: 12px;
-    border: 1px solid #dddfe2;
-    border-radius: 6px;
-    font-size: 14px;
-  }
-  #filterForm input:focus {
-    outline: none;
-    border-color: #1877f2;
-    box-shadow: 0 0 0 1px #1877f2;
-  }
-  #filterForm button[type="submit"] {
-    background: #1877f2;
-    color: #fff;
-    border: none;
-    border-radius: 6px;
-    padding: 12px;
-    font-size: 16px;
-    font-weight: bold;
-    cursor: pointer;
-  }
-  #filterForm button[type="submit"]:hover { background: #166fe5; }
+/* === Kotak form gaya Facebook === */
+#filterForm {
+  background: #fff;
+  max-width: 360px;      /* lebar kotak form */
+  margin: 60px auto;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  display: flex;
+  flex-direction: column;
+  align-items: center;   /* isi tetap rata tengah */
+  gap: 12px;
+}
+#filterForm input {
+  width: 280px;          /* ❗ lebih sempit dari kotak form */
+  padding: 10px;
+  border: 1px solid #dddfe2;
+  border-radius: 6px;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+#filterForm input:focus {
+  outline: none;
+  border-color: #1877f2;
+  box-shadow: 0 0 0 1px #1877f2;
+}
+#filterForm button[type="submit"] {
+  background: #1877f2;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 12px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  width: 150px;          /* tombol tetap lebih kecil dan center */
+}
+#filterForm button[type="submit"]:hover { background: #166fe5; }
 
-  /* tombol tambahan */
-  #download, #backBtn {
-    display: none;
-    width: 200px;
-    margin: 20px auto;
-    padding: 12px;
-    text-align: center;
-    border: none;
-    border-radius: 6px;
-    color: #fff;
-    font-weight: bold;
-    cursor: pointer;
-  }
-  #download { background: #42b72a; }          /* hijau */
-  #download:hover { background: #36a420; }
-  #backBtn { background: #1877f2; }           /* biru */
-  #backBtn:hover { background: #166fe5; }
+/* tombol tambahan */
+#download, #backBtn {
+  display: none;
+  width: 200px;
+  margin: 20px auto;
+  padding: 12px;
+  text-align: center;
+  border: none;
+  border-radius: 6px;
+  color: #fff;
+  font-weight: bold;
+  cursor: pointer;
+}
+#download { background: #42b72a; }
+#download:hover { background: #36a420; }
+#backBtn { background: #1877f2; }
+#backBtn:hover { background: #166fe5; }
 
-  /* Tabel hasil */
-  table { border-collapse: collapse; width: 100%; margin-top: 1em; background:#fff; }
-  th, td { border: 1px solid #ccc; padding: 6px; text-align: left; }
-  th { background: #f0f0f0; }
-  #total { margin-top:1em; font-weight: bold; text-align:center; }
+table { border-collapse: collapse; width: 100%; margin-top: 1em; background:#fff; }
+th, td { border: 1px solid #ccc; padding: 6px; text-align: left; }
+th { background: #f0f0f0; }
+#total { margin-top:1em; font-weight: bold; text-align:center; }
 
-  footer {
-    text-align: center;
-    margin-top: 40px;
-    font-size: 0.9em;
-    color: #666;
-  }
+footer {
+  text-align: center;
+  margin-top: 40px;
+  font-size: 0.9em;
+  color: #666;
+}
 </style>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
