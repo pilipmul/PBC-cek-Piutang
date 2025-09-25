@@ -5,68 +5,76 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Index AR PBC</title>
 <style>
-  body { font-family: Arial, sans-serif; }
+  body {
+    font-family: Arial, sans-serif;
+    background: #f0f2f5;
+    margin: 0;
+    padding: 0;
+  }
 
-  form {
+  /* === Kotak form gaya Facebook === */
+  #filterForm {
+    background: #fff;
+    max-width: 360px;
+    margin: 60px auto;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
     display: flex;
     flex-direction: column;
-    align-items: center;
     gap: 12px;
-    max-width: 300px;
-    margin: auto;
   }
-
-  form input {
+  #filterForm input {
     width: 100%;
-    padding: 8px;
-    box-sizing: border-box;
+    padding: 12px;
+    border: 1px solid #dddfe2;
+    border-radius: 6px;
     font-size: 14px;
   }
-
-  form button {
-    width: 50%;
-    padding: 8px;
-    cursor: pointer;
+  #filterForm input:focus {
+    outline: none;
+    border-color: #1877f2;
+    box-shadow: 0 0 0 1px #1877f2;
   }
-
   #filterForm button[type="submit"] {
-    width: 50%;
-    margin: 12px auto;
-    padding: 8px 0;
-    background: #4CAF50;
-    color: white;
+    background: #1877f2;
+    color: #fff;
     border: none;
-    border-radius: 4px;
+    border-radius: 6px;
+    padding: 12px;
+    font-size: 16px;
+    font-weight: bold;
     cursor: pointer;
   }
-  #filterForm button[type="submit"]:hover { background: #45a049; }
+  #filterForm button[type="submit"]:hover { background: #166fe5; }
 
-  table { border-collapse: collapse; width: 100%; margin-top: 1em; }
-  th, td { border: 1px solid #ccc; padding: 6px; text-align: left; }
-  th { background: #f0f0f0; }
-  #total { margin-top:1em; font-weight: bold; }
-
+  /* tombol tambahan */
   #download, #backBtn {
     display: none;
-    width: 50%;
-    max-width: 200px;
-    margin: 1em auto;
-    padding: 10px 0;
+    width: 200px;
+    margin: 20px auto;
+    padding: 12px;
     text-align: center;
-    background: #4CAF50;
-    color: white;
     border: none;
-    border-radius: 4px;
+    border-radius: 6px;
+    color: #fff;
+    font-weight: bold;
     cursor: pointer;
   }
-  #download:hover, #backBtn:hover { background: #45a049; }
+  #download { background: #42b72a; }          /* hijau */
+  #download:hover { background: #36a420; }
+  #backBtn { background: #1877f2; }           /* biru */
+  #backBtn:hover { background: #166fe5; }
+
+  /* Tabel hasil */
+  table { border-collapse: collapse; width: 100%; margin-top: 1em; background:#fff; }
+  th, td { border: 1px solid #ccc; padding: 6px; text-align: left; }
+  th { background: #f0f0f0; }
+  #total { margin-top:1em; font-weight: bold; text-align:center; }
 
   footer {
-    position: fixed;
-    bottom: 8px;
-    left: 0;
-    width: 100%;
     text-align: center;
+    margin-top: 40px;
     font-size: 0.9em;
     color: #666;
   }
@@ -74,11 +82,10 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
-<!-- PapaParse untuk parsing CSV dengan aman -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 </head>
 <body>
-<h1 style="text-align:center;">Index AR PBC</h1>
+<h1 style="text-align:center;margin-top:20px;">Index AR PBC</h1>
 
 <form id="filterForm">
   <input type="text" id="lokasi" placeholder="Lokasi" required>
@@ -87,7 +94,7 @@
   <button type="submit">Cari</button>
 </form>
 
-<div id="hasilContainer" style="display:none;">
+<div id="hasilContainer" style="display:none;max-width:95%;margin:auto;">
   <table id="hasilTable">
     <thead>
       <tr>
@@ -170,7 +177,6 @@ document.getElementById('filterForm').addEventListener('submit', e => {
         return;
       }
 
-      // tampilkan hasil, sembunyikan form
       form.style.display = 'none';
       container.style.display = 'block';
       document.getElementById('download').style.display = 'block';
@@ -203,13 +209,13 @@ document.getElementById('filterForm').addEventListener('submit', e => {
     });
 });
 
-// tombol kembali
 document.getElementById('backBtn').addEventListener('click', () => {
   document.getElementById('hasilContainer').style.display = 'none';
   document.getElementById('download').style.display = 'none';
   document.getElementById('backBtn').style.display = 'none';
-  document.getElementById('filterForm').style.display = 'flex';
-  document.getElementById('filterForm').reset();
+  const form = document.getElementById('filterForm');
+  form.style.display = 'flex';
+  form.reset();
 });
 
 // Download PDF
@@ -229,7 +235,8 @@ document.getElementById('download').addEventListener('click', () => {
   const finalY = (doc.lastAutoTable?.finalY || 25) + 10;
   doc.text(document.getElementById('total').textContent, 14, finalY);
   const footerText = "PT. Putra Citanusa @ 2025";
-  doc.text(footerText,
+  doc.text(
+    footerText,
     (pageWidth - doc.getTextWidth(footerText)) / 2,
     doc.internal.pageSize.getHeight() - 10
   );
