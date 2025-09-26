@@ -8,9 +8,9 @@
   body {
     font-family: Arial, sans-serif;
     background: #f0f2f5;
-    margin: 0;
-    padding: 0;
+    margin: 0; padding: 0;
   }
+
   /* === Kotak form gaya Facebook === */
   #filterForm {
     background: #fff;
@@ -24,13 +24,13 @@
     align-items: center;
     gap: 12px;
   }
-  .input-wrapper {
+  .input-wrap {
     position: relative;
     width: 280px;
   }
   #filterForm input {
     width: 100%;
-    padding: 10px 36px 10px 10px; /* ruang untuk ikon mata */
+    padding: 10px 36px 10px 10px; /* ruang untuk icon */
     border: 1px solid #dddfe2;
     border-radius: 6px;
     font-size: 14px;
@@ -41,15 +41,20 @@
     border-color: #1877f2;
     box-shadow: 0 0 0 1px #1877f2;
   }
-  /* ikon mata */
   .toggle-eye {
     position: absolute;
     right: 10px;
     top: 50%;
     transform: translateY(-50%);
+    background: none;
+    border: none;
     cursor: pointer;
-    font-size: 18px;
-    color: #888;
+    padding: 0;
+  }
+  .toggle-eye svg {
+    width: 20px;
+    height: 20px;
+    fill: #606770;
   }
 
   #filterForm button[type="submit"] {
@@ -85,10 +90,7 @@
 
   table { border-collapse: collapse; width: 100%; margin-top: 1em; background:#fff; }
   th, td { border: 1px solid #ccc; padding: 6px; text-align: left; }
-  th {
-    background: #1877f2;
-    color: #fff;
-  }
+  th { background: #1877f2; color: #fff; }
   #total { margin-top:1em; font-weight: bold; text-align:center; }
 
   footer {
@@ -107,15 +109,22 @@
 <h1 style="text-align:center;margin-top:20px;">Index AR PBC</h1>
 
 <form id="filterForm">
-  <input type="text" id="lokasi" placeholder="Lokasi" required>
-  <input type="number" id="tahun" placeholder="Tahun" required>
-
-  <!-- password + ikon mata -->
-  <div class="input-wrapper">
-    <input type="password" id="password" placeholder="Password" required>
-    <span class="toggle-eye" id="toggleEye">&#128065;</span>
+  <div class="input-wrap">
+    <input type="text" id="lokasi" placeholder="Lokasi" required>
   </div>
-
+  <div class="input-wrap">
+    <input type="number" id="tahun" placeholder="Tahun" required>
+  </div>
+  <div class="input-wrap">
+    <input type="password" id="password" placeholder="Password" required>
+    <button type="button" class="toggle-eye" id="togglePass">
+      <!-- ikon mata awalnya tertutup (slash) -->
+      <svg viewBox="0 0 24 24" id="eye-icon">
+        <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zm0 12a4.5 4.5 0 1 1 0-9 4.5 4.5 0 0 1 0 9zm0-7a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z"/>
+        <line x1="4" y1="4" x2="20" y2="20" stroke="#606770" stroke-width="2"/>
+      </svg>
+    </button>
+  </div>
   <button type="submit">Cari</button>
 </form>
 
@@ -152,12 +161,20 @@ const SHEET_URLS = [
 ];
 const MASTER_PASSWORD = "master123";
 
-// toggle show/hide password (mobile friendly)
-document.getElementById('toggleEye').addEventListener('click', () => {
+// === Toggle password ===
+document.getElementById('togglePass').addEventListener('click', () => {
   const pwd = document.getElementById('password');
-  pwd.type = pwd.type === 'password' ? 'text' : 'password';
+  const icon = document.getElementById('eye-icon');
+  if (pwd.type === "password") {
+    pwd.type = "text";
+    icon.innerHTML = '<path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zm0 12a4.5 4.5 0 1 1 0-9 4.5 4.5 0 0 1 0 9zm0-7a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z"/>';
+  } else {
+    pwd.type = "password";
+    icon.innerHTML = '<path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zm0 12a4.5 4.5 0 1 1 0-9 4.5 4.5 0 0 1 0 9zm0-7a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z"/><line x1="4" y1="4" x2="20" y2="20" stroke="#606770" stroke-width="2"/>';
+  }
 });
 
+// === Filter data & render ===
 document.getElementById('filterForm').addEventListener('submit', e => {
   e.preventDefault();
   const lokasi = document.getElementById('lokasi').value.trim().toLowerCase();
@@ -223,19 +240,11 @@ document.getElementById('filterForm').addEventListener('submit', e => {
           tr.appendChild(td);
         };
         addCell(idx + 1);
-        addCell(r[iNoFak]);
-        addCell(r[iTglFak]);
-        addCell(r[iNoPel]);
-        addCell(r[iNamaPel]);
-        addCell(r[iNilai]);      // tampilkan persis seperti di sheet
-        addCell(r[iTerutang]);   // tampilkan persis seperti di sheet
-        addCell(r[iTglBayar]);
-        addCell(r[iKet]);
+        [iNoFak,iTglFak,iNoPel,iNamaPel,iNilai,iTerutang,iTglBayar,iKet]
+          .forEach(idxCol => addCell(r[idxCol]));
         body.appendChild(tr);
-
-        // parsing untuk hitung total
-        totalNilai    += parseFloat((r[iNilai]||'0').replace(/\./g,'').replace(',','.')) || 0;
-        totalTerutang += parseFloat((r[iTerutang]||'0').replace(/\./g,'').replace(',','.')) || 0;
+        totalTerutang += parseFloat(r[iTerutang]) || 0;
+        totalNilai    += parseFloat(r[iNilai]) || 0;
       });
 
       totalDiv.textContent =
@@ -257,7 +266,7 @@ document.getElementById('backBtn').addEventListener('click', () => {
   form.reset();
 });
 
-// Download PDF
+// === Download PDF ===
 document.getElementById('download').addEventListener('click', () => {
   const { jsPDF } = window.jspdf;
   if (!jsPDF) { alert("jsPDF belum termuat"); return; }
