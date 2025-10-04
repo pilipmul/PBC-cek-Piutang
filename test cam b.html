@@ -1,41 +1,23 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-<meta charset="UTF-8" />
+<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Scan Angka KWH Meter</title>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
-<script async src="https://docs.opencv.org/4.x/opencv.js"></script>
 <style>
   body {
-    background: #000;
-    color: #fff;
-    text-align: center;
-    font-family: sans-serif;
     margin: 0;
     padding: 0;
-  }
-  #camera-container {
-    position: relative;
-    display: inline-block;
-    width: 100%;
-    max-width: 480px;
+    background: #000;
+    color: #fff;
+    font-family: sans-serif;
+    text-align: center;
   }
   video, canvas, img {
     width: 100%;
+    max-width: 480px;
     border-radius: 10px;
-  }
-  /* Kotak panduan di tengah layar */
-  #guide-box {
-    position: absolute;
-    border: 3px solid #00ffcc;
-    border-radius: 8px;
-    width: 70%;
-    aspect-ratio: 5 / 1;
-    top: 40%;
-    left: 15%;
-    box-shadow: 0 0 15px rgba(0,255,200,0.5);
-    pointer-events: none;
   }
   #capture {
     background: #007bff;
@@ -49,23 +31,37 @@
   }
   #hasil {
     margin-top: 15px;
-    font-size: 1.3em;
+    font-size: 1.5em;
     color: #00ffcc;
+  }
+  .guide {
+    position: absolute;
+    border: 3px solid #00ffcc;
+    width: 60%;
+    height: 20%;
+    top: 40%;
+    left: 20%;
+    border-radius: 8px;
+    box-shadow: 0 0 20px rgba(0,255,200,0.4);
+    pointer-events: none;
+  }
+  .video-container {
+    position: relative;
+    display: inline-block;
   }
 </style>
 </head>
 <body>
   <h2>📸 Scan Angka KWH</h2>
 
-  <div id="camera-container">
+  <div class="video-container" id="cameraSection">
     <video id="video" autoplay playsinline></video>
-    <div id="guide-box"></div>
+    <div class="guide"></div>
   </div>
 
   <canvas id="canvas" style="display:none;"></canvas>
   <br>
   <button id="capture">📷 Ambil Foto</button>
-
   <div id="preview"></div>
   <div id="hasil"></div>
 
@@ -75,8 +71,9 @@ const canvas = document.getElementById('canvas');
 const captureBtn = document.getElementById('capture');
 const hasilDiv = document.getElementById('hasil');
 const previewDiv = document.getElementById('preview');
+const cameraSection = document.getElementById('cameraSection');
 
-// === 1️⃣ Nyalakan kamera otomatis ===
+// 🔹 Nyalakan kamera
 async function startCamera() {
   try {
     const stream = await navigator.mediaDevices.getUserMedia({
@@ -84,86 +81,70 @@ async function startCamera() {
     });
     video.srcObject = stream;
   } catch (err) {
-    alert('Tidak dapat mengakses kamera. Aktifkan izin kamera di browser.');
+    alert('Tidak dapat mengakses kamera. Pastikan izin kamera diaktifkan.');
     console.error(err);
   }
 }
 startCamera();
 
-// === 2️⃣ Saat tombol diklik ===
+// 🔹 Fungsi koreksi karakter mirip angka
+function normalizeDigits(text) {
+  return text
+    .toUpperCase()
+    .replace(/O/g, '0')
+    .replace(/I/g, '1')
+    .replace(/L/g, '1')
+    .replace(/Z/g, '2')
+    .replace(/S/g, '5')
+    .replace(/B/g, '8')
+    .replace(/[^0-9]/g, '');
+}
+
+// 🔹 Ambil foto dan OCR
 captureBtn.addEventListener('click', async () => {
-  // Ambil frame dari video
   const ctx = canvas.getContext('2d');
   canvas.width = video.videoWidth;
   canvas.height = video.videoHeight;
   ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-  // Hentikan kamera & sembunyikan tampilan live
-  const stream = video.srcObject;
-  if (stream) stream.getTracks().forEach(t => t.stop());
-  document.getElementById('camera-container').style.display = 'none';
-  captureBtn.style.display = "none";
+  // 🔸 ambil area tengah (sesuai guide box)
+  const cropY = canvas.height * 0.4;
+  const cropHeight = canvas.height * 0.2;
+  const cropX = canvas.width * 0.2;
+  const cropWidth = canvas.width * 0.6;
 
-  // Tampilkan hasil foto
-  const dataURL = canvas.toDataURL('image/png');
-  previewDiv.innerHTML = `<img id="foto" src="${dataURL}" alt="Foto diambil">`;
-  hasilDiv.innerHTML = "🔍 Memproses gambar...";
+  const imageData = ctx.getImageData(cropX, cropY, cropWidth, cropHeight);
+  const cropCanvas = document.createElement('canvas');
+  cropCanvas.width = cropWidth;
+  cropCanvas.height = cropHeight;
+  const cropCtx = cropCanvas.getContext('2d');
+  cropCtx.putImageData(imageData, 0, 0);
 
-  // Tunggu OpenCV siap
-  let checkReady = setInterval(() => {
-    if (cv && cv.Mat) {
-      clearInterval(checkReady);
-      processImage();
-    }
-  }, 200);
-
-  // === 3️⃣ Proses deteksi & OCR ===
-  async function processImage() {
-    const img = document.getElementById('foto');
-    const src = cv.imread(img);
-    const gray = new cv.Mat();
-    const thresh = new cv.Mat();
-    const contours = new cv.MatVector();
-    const hierarchy = new cv.Mat();
-
-    cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY, 0);
-    cv.threshold(gray, thresh, 50, 255, cv.THRESH_BINARY_INV);
-    cv.findContours(thresh, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
-
-    // Cari kontur terbesar berbentuk kotak lebar
-    let maxRect = null;
-    let maxArea = 0;
-    for (let i = 0; i < contours.size(); ++i) {
-      let rect = cv.boundingRect(contours.get(i));
-      let area = rect.width * rect.height;
-      if (area > maxArea && rect.width > rect.height * 2) {
-        maxArea = area;
-        maxRect = rect;
-      }
-    }
-
-    if (maxRect) {
-      // Potong area angka
-      const roi = src.roi(maxRect);
-      cv.imshow('canvas', roi);
-      const croppedData = canvas.toDataURL('image/png');
-      hasilDiv.innerHTML = "⏳ Membaca angka...";
-
-      const { data: { text } } = await Tesseract.recognize(croppedData, 'eng', {
-        tessedit_char_whitelist: '0123456789'
-      });
-
-      const angka = text.replace(/\D/g, '');
-      hasilDiv.innerHTML = angka
-        ? `📖 Angka terbaca: <span style="color:#00ffcc;">${angka}</span>`
-        : "⚠️ Tidak dapat mengenali angka, coba ulang.";
-
-      // Bersihkan memory OpenCV
-      src.delete(); gray.delete(); thresh.delete(); contours.delete(); hierarchy.delete();
-    } else {
-      hasilDiv.innerHTML = "❌ Area angka tidak ditemukan.";
-    }
+  // 🔸 tingkatkan kontras agar OCR lebih akurat
+  const imgData = cropCtx.getImageData(0, 0, cropWidth, cropHeight);
+  for (let i = 0; i < imgData.data.length; i += 4) {
+    const avg = (imgData.data[i] + imgData.data[i + 1] + imgData.data[i + 2]) / 3;
+    const val = avg > 128 ? 255 : 0;
+    imgData.data[i] = imgData.data[i + 1] = imgData.data[i + 2] = val;
   }
+  cropCtx.putImageData(imgData, 0, 0);
+
+  // 🔸 tampilkan hasil foto dan sembunyikan kamera
+  previewDiv.innerHTML = `<img src="${cropCanvas.toDataURL()}" alt="Hasil foto">`;
+  cameraSection.style.display = "none";
+
+  hasilDiv.innerHTML = "⏳ Membaca angka...";
+
+  // 🔹 OCR dengan Tesseract
+  const { data: { text } } = await Tesseract.recognize(cropCanvas, 'eng', {
+    tessedit_char_whitelist: '0123456789OISLBZ',
+  });
+
+  const hasilAngka = normalizeDigits(text);
+
+  hasilDiv.innerHTML = hasilAngka
+    ? `📖 Angka terbaca: <span style="color:#00ffcc;">${hasilAngka}</span>`
+    : "⚠️ Tidak dapat mengenali angka, coba ambil ulang.";
 });
 </script>
 </body>
