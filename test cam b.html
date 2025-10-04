@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-<meta charset="UTF-8">
+<meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Scan Angka KWH Meter</title>
+<title>Scan Angka KWH - Model Digit OCR</title>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <style>
   body {
@@ -19,7 +19,7 @@
     max-width: 480px;
     border-radius: 10px;
   }
-  #capture {
+  button {
     background: #007bff;
     border: none;
     color: white;
@@ -44,6 +44,11 @@
     border-radius: 8px;
     box-shadow: 0 0 20px rgba(0,255,200,0.4);
     pointer-events: none;
+    animation: blink 2s infinite alternate;
+  }
+  @keyframes blink {
+    from {opacity: 1;}
+    to {opacity: 0.4;}
   }
   .video-container {
     position: relative;
@@ -52,7 +57,7 @@
 </style>
 </head>
 <body>
-  <h2>📸 Scan Angka KWH</h2>
+  <h2>📸 Scan Angka KWH (Mode Digit OCR)</h2>
 
   <div class="video-container" id="cameraSection">
     <video id="video" autoplay playsinline></video>
@@ -62,6 +67,7 @@
   <canvas id="canvas" style="display:none;"></canvas>
   <br>
   <button id="capture">📷 Ambil Foto</button>
+  <button id="retry" style="display:none; background:#28a745;">🔁 Ambil Ulang</button>
   <div id="preview"></div>
   <div id="hasil"></div>
 
@@ -69,11 +75,12 @@
 const video = document.getElementById('video');
 const canvas = document.getElementById('canvas');
 const captureBtn = document.getElementById('capture');
+const retryBtn = document.getElementById('retry');
 const hasilDiv = document.getElementById('hasil');
 const previewDiv = document.getElementById('preview');
 const cameraSection = document.getElementById('cameraSection');
 
-// 🔹 Nyalakan kamera
+// === 1️⃣ Nyalakan kamera ===
 async function startCamera() {
   try {
     const stream = await navigator.mediaDevices.getUserMedia({
@@ -87,27 +94,65 @@ async function startCamera() {
 }
 startCamera();
 
-// 🔹 Fungsi koreksi karakter mirip angka
+// === 2️⃣ Fungsi koreksi karakter mirip angka ===
 function normalizeDigits(text) {
   return text
     .toUpperCase()
     .replace(/O/g, '0')
-    .replace(/I/g, '1')
-    .replace(/L/g, '1')
+    .replace(/[IL]/g, '1')
     .replace(/Z/g, '2')
     .replace(/S/g, '5')
     .replace(/B/g, '8')
     .replace(/[^0-9]/g, '');
 }
 
-// 🔹 Ambil foto dan OCR
+// === 3️⃣ Penajaman tepi + threshold adaptif ===
+function enhanceImage(ctx, width, height) {
+  let imgData = ctx.getImageData(0, 0, width, height);
+  const d = imgData.data;
+
+  // grayscale + threshold
+  for (let i = 0; i < d.length; i += 4) {
+    const avg = (d[i] + d[i + 1] + d[i + 2]) / 3;
+    const val = avg > 130 ? 255 : 0;
+    d[i] = d[i + 1] = d[i + 2] = val;
+  }
+  ctx.putImageData(imgData, 0, 0);
+
+  // edge sharpen (kernel sederhana)
+  const temp = ctx.getImageData(0, 0, width, height);
+  const td = temp.data;
+  const kernel = [0, -1, 0, -1, 5, -1, 0, -1, 0];
+  for (let y = 1; y < height - 1; y++) {
+    for (let x = 1; x < width - 1; x++) {
+      let r = 0, g = 0, b = 0;
+      let i = 0;
+      for (let ky = -1; ky <= 1; ky++) {
+        for (let kx = -1; kx <= 1; kx++) {
+          const px = ((y + ky) * width + (x + kx)) * 4;
+          const w = kernel[i++];
+          r += td[px] * w;
+          g += td[px + 1] * w;
+          b += td[px + 2] * w;
+        }
+      }
+      const p = (y * width + x) * 4;
+      d[p] = Math.min(Math.max(r, 0), 255);
+      d[p + 1] = Math.min(Math.max(g, 0), 255);
+      d[p + 2] = Math.min(Math.max(b, 0), 255);
+    }
+  }
+  ctx.putImageData(imgData, 0, 0);
+}
+
+// === 4️⃣ Ambil foto ===
 captureBtn.addEventListener('click', async () => {
   const ctx = canvas.getContext('2d');
   canvas.width = video.videoWidth;
   canvas.height = video.videoHeight;
   ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-  // 🔸 ambil area tengah (sesuai guide box)
+  // ambil area tengah (guide box)
   const cropY = canvas.height * 0.4;
   const cropHeight = canvas.height * 0.2;
   const cropX = canvas.width * 0.2;
@@ -120,31 +165,39 @@ captureBtn.addEventListener('click', async () => {
   const cropCtx = cropCanvas.getContext('2d');
   cropCtx.putImageData(imageData, 0, 0);
 
-  // 🔸 tingkatkan kontras agar OCR lebih akurat
-  const imgData = cropCtx.getImageData(0, 0, cropWidth, cropHeight);
-  for (let i = 0; i < imgData.data.length; i += 4) {
-    const avg = (imgData.data[i] + imgData.data[i + 1] + imgData.data[i + 2]) / 3;
-    const val = avg > 128 ? 255 : 0;
-    imgData.data[i] = imgData.data[i + 1] = imgData.data[i + 2] = val;
-  }
-  cropCtx.putImageData(imgData, 0, 0);
+  // Preprocessing
+  enhanceImage(cropCtx, cropWidth, cropHeight);
 
-  // 🔸 tampilkan hasil foto dan sembunyikan kamera
+  // tampilkan hasil foto
   previewDiv.innerHTML = `<img src="${cropCanvas.toDataURL()}" alt="Hasil foto">`;
   cameraSection.style.display = "none";
-
+  captureBtn.style.display = "none";
+  retryBtn.style.display = "inline-block";
   hasilDiv.innerHTML = "⏳ Membaca angka...";
 
-  // 🔹 OCR dengan Tesseract
-  const { data: { text } } = await Tesseract.recognize(cropCanvas, 'eng', {
-    tessedit_char_whitelist: '0123456789OISLBZ',
+  // === 5️⃣ Jalankan OCR (pakai model digit only) ===
+  const worker = await Tesseract.createWorker({
+    langPath: '.', // lokasi file model
   });
+  await worker.loadLanguage('digits');
+  await worker.initialize('digits');
+  const { data: { text } } = await worker.recognize(cropCanvas);
+  await worker.terminate();
 
   const hasilAngka = normalizeDigits(text);
 
   hasilDiv.innerHTML = hasilAngka
     ? `📖 Angka terbaca: <span style="color:#00ffcc;">${hasilAngka}</span>`
     : "⚠️ Tidak dapat mengenali angka, coba ambil ulang.";
+});
+
+// === 6️⃣ Ambil ulang ===
+retryBtn.addEventListener('click', () => {
+  cameraSection.style.display = "block";
+  captureBtn.style.display = "inline-block";
+  retryBtn.style.display = "none";
+  hasilDiv.innerHTML = "";
+  previewDiv.innerHTML = "";
 });
 </script>
 </body>
