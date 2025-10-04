@@ -2,28 +2,53 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8" />
-  <title>Scan Angka KWH</title>
+  <title>Scan Angka KWH Listrik</title>
   <style>
-    body { font-family: Arial, sans-serif; text-align: center; background: #f5f5f5; }
-    video, canvas, img { width: 90%; max-width: 400px; border-radius: 12px; margin-top: 10px; }
+    body { 
+      font-family: Arial, sans-serif; 
+      text-align: center; 
+      background: #f5f5f5; 
+      margin: 0; 
+      padding: 10px;
+    }
+    video, canvas, img { 
+      width: 90%; 
+      max-width: 400px; 
+      border-radius: 12px; 
+      margin-top: 10px; 
+    }
     #guideBox {
-      position: absolute; border: 3px dashed red;
-      width: 80%; height: 25%; top: 35%; left: 10%;
+      position: absolute;
+      border: 3px dashed red;
+      width: 70%;
+      height: 20%;
+      top: 40%;
+      left: 15%;
       pointer-events: none;
+      box-shadow: 0 0 10px rgba(255,0,0,0.3);
     }
-    #captureBtn, #scanBtn {
-      margin: 12px; padding: 12px 18px; font-size: 16px;
-      border: none; border-radius: 8px; background: #0078ff; color: white;
+    #container { 
+      position: relative; 
+      display: inline-block; 
     }
-    #result { margin-top: 20px; font-size: 22px; font-weight: bold; color: #333; }
+    #captureBtn {
+      margin: 12px; 
+      padding: 12px 18px; 
+      font-size: 16px;
+      border: none; 
+      border-radius: 8px; 
+      background: #0078ff; 
+      color: white;
+    }
     #loading { display: none; color: #555; margin-top: 10px; }
+    #result { margin-top: 20px; font-size: 22px; font-weight: bold; color: #333; }
   </style>
 </head>
 <body>
 
   <h2>📷 Scan Angka KWH Listrik</h2>
 
-  <div style="position: relative; display: inline-block;">
+  <div id="container">
     <video id="camera" autoplay playsinline></video>
     <div id="guideBox"></div>
   </div>
@@ -45,20 +70,38 @@
     const result = document.getElementById('result');
     const loading = document.getElementById('loading');
 
-    // Buka kamera
+    // 🔹 Buka kamera
     navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
-      .then(stream => { video.srcObject = stream; })
+      .then(stream => video.srcObject = stream)
       .catch(err => alert("Tidak dapat mengakses kamera: " + err));
 
-    // Ambil foto
+    // 🔹 Saat tombol "Ambil Foto" ditekan
     document.getElementById('captureBtn').onclick = async () => {
       const ctx = canvas.getContext('2d');
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-      // tampilkan hasil foto
-      const dataUrl = canvas.toDataURL('image/jpeg');
+      // Ambil koordinat area panduan (sesuai rasio video)
+      const box = document.getElementById('guideBox');
+      const videoRect = video.getBoundingClientRect();
+      const scaleX = canvas.width / videoRect.width;
+      const scaleY = canvas.height / videoRect.height;
+
+      const cropX = (box.offsetLeft - video.offsetLeft) * scaleX;
+      const cropY = (box.offsetTop - video.offsetTop) * scaleY;
+      const cropW = box.offsetWidth * scaleX;
+      const cropH = box.offsetHeight * scaleY;
+
+      // Ambil bagian dalam kotak panduan
+      const croppedCanvas = document.createElement('canvas');
+      croppedCanvas.width = cropW;
+      croppedCanvas.height = cropH;
+      const croppedCtx = croppedCanvas.getContext('2d');
+      croppedCtx.drawImage(canvas, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
+
+      // tampilkan hasil foto potongan
+      const dataUrl = croppedCanvas.toDataURL('image/jpeg');
       img.src = dataUrl;
       img.style.display = 'block';
       video.style.display = 'none';
@@ -66,27 +109,27 @@
       document.getElementById('captureBtn').style.display = 'none';
       loading.style.display = 'block';
 
-      // kirim ke OCR API
+      // 🔹 Kirim ke API OCR.Space
       const formData = new FormData();
       formData.append("base64Image", dataUrl);
-      formData.append("apikey", "K83419236888957");
+      formData.append("apikey", "K83419236888957");  // ganti dengan API key kamu
       formData.append("language", "eng");
       formData.append("isTable", "true");
+      formData.append("scale", "true");
+      formData.append("detectOrientation", "true");
 
       try {
-        const res = await fetch("https://api.ocr.space/parse/image", {
-          method: "POST",
-          body: formData
-        });
+        const res = await fetch("https://api.ocr.space/parse/image", { method: "POST", body: formData });
         const data = await res.json();
         loading.style.display = 'none';
+
         if (data && data.ParsedResults && data.ParsedResults[0]) {
           let text = data.ParsedResults[0].ParsedText.trim();
-          // Koreksi umum angka KWH
-          text = text.replace(/[Oo]/g, "0").replace(/[Bb]/g, "8").replace(/[Ss]/g, "5");
-          result.innerHTML = "🔢 Hasil Deteksi: <br><span style='font-size:28px;color:#0078ff;'>" + text + "</span>";
+          // Koreksi umum angka
+          text = text.replace(/[Oo]/g, "0").replace(/[Bb]/g, "8").replace(/[Ss]/g, "5").replace(/[Il]/g, "1");
+          result.innerHTML = "🔢 Hasil Deteksi:<br><span style='font-size:28px;color:#0078ff;'>" + text + "</span>";
         } else {
-          result.textContent = "Gagal membaca angka.";
+          result.textContent = "Gagal membaca angka. Coba ambil foto lebih jelas.";
         }
       } catch (err) {
         loading.style.display = 'none';
