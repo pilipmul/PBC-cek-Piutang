@@ -119,7 +119,7 @@
 
 <form id="filterForm">
   <div class="input-wrap">
-    <input type="text" id="lokasi" placeholder="Lokasi (No. Pelanggan)" list="lokasiList" required>
+    <input type="text" id="lokasi" placeholder="Lokasi (No. Pelanggan)" list="lokasiList" autocomplete="off" required>
     <datalist id="lokasiList"></datalist>
   </div>
   <div class="input-wrap">
@@ -165,113 +165,111 @@
 <script>
 const SHEET_URLS = [
   "https://docs.google.com/spreadsheets/d/e/2PACX-1vT-PAf-G7kujpAjGhWROCvIrQ2gxn4MPjiCdbmYeowwjox00VKu2mq5cVFkgSUNg91tzJXfPHF34np7/pub?gid=126462838&single=true&output=csv"
-  // Tambahkan URL CSV lainnya di sini jika ada
 ];
 const MASTER_PASSWORD = "master123";
 
-// === 1. Fungsi Memuat Sugesti Lokasi Otomatis ===
-function loadSuggestions() {
-  const datalist = document.getElementById('lokasiList');
-  // Kita ambil dari URL pertama sebagai master list lokasi
+// --- LOGIKA DATA SUGESTI ---
+let listLokasiMaster = [];
+
+function fetchMasterLokasi() {
   fetch(SHEET_URLS[0])
     .then(res => res.text())
     .then(csv => {
-      const data = Papa.parse(csv.trim(), {skipEmptyLines: true}).data;
-      const header = data[0];
+      const parsed = Papa.parse(csv.trim(), {skipEmptyLines: true}).data;
+      const header = parsed[0];
       const iNoPel = header.indexOf('No. Pelanggan');
-      
-      if (iNoPel === -1) return;
-
-      // Ambil No. Pelanggan unik dan urutkan
-      const uniqueLoc = [...new Set(data.slice(1).map(row => row[iNoPel]))].sort();
-      
-      datalist.innerHTML = '';
-      uniqueLoc.forEach(loc => {
-        if(loc) {
-          const opt = document.createElement('option');
-          opt.value = loc;
-          datalist.appendChild(opt);
-        }
-      });
-    })
-    .catch(err => console.error("Gagal memuat sugesti:", err));
+      if (iNoPel !== -1) {
+        // Ambil data unik untuk sugesti
+        listLokasiMaster = [...new Set(parsed.slice(1).map(row => row[iNoPel]))].sort();
+      }
+    });
 }
 
-// Jalankan saat halaman dibuka
-window.addEventListener('DOMContentLoaded', loadSuggestions);
-
-// === 2. Logika Toggle Password ===
-const passField = document.getElementById('password');
-const togglePassBtn = document.getElementById('togglePass');
-const eyeLine = document.getElementById('eye-line');
-
-passField.addEventListener('input', () => {
-  togglePassBtn.style.display = passField.value ? 'block' : 'none';
+// Hanya tampilkan sugesti jika kolom tidak kosong
+document.getElementById('lokasi').addEventListener('input', function() {
+  const dl = document.getElementById('lokasiList');
+  if (this.value.trim() === "") {
+    dl.innerHTML = ""; 
+  } else {
+    if (dl.children.length === 0) { // Isi datalist jika masih kosong
+      listLokasiMaster.forEach(loc => {
+        const opt = document.createElement('option');
+        opt.value = loc;
+        dl.appendChild(opt);
+      });
+    }
+  }
 });
 
-togglePassBtn.addEventListener('click', () => {
-  if (passField.type === "password") {
-    passField.type = "text";
+window.addEventListener('DOMContentLoaded', fetchMasterLokasi);
+
+// --- LOGIKA PASSWORD ---
+const passInput = document.getElementById('password');
+const toggleBtn = document.getElementById('togglePass');
+const eyeLine = document.getElementById('eye-line');
+
+passInput.addEventListener('input', () => {
+  toggleBtn.style.display = passInput.value ? 'block' : 'none';
+});
+
+toggleBtn.addEventListener('click', () => {
+  if (passInput.type === "password") {
+    passInput.type = "text";
     eyeLine.style.display = "none";
   } else {
-    passField.type = "password";
+    passInput.type = "password";
     eyeLine.style.display = "block";
   }
 });
 
-// === 3. Filter data & render ===
+// --- FILTER & RENDER ---
 document.getElementById('filterForm').addEventListener('submit', e => {
   e.preventDefault();
-  const lokasi = document.getElementById('lokasi').value.trim().toLowerCase();
-  const tahun  = document.getElementById('tahun').value.trim();
-  const pass   = document.getElementById('password').value.trim();
+  const lokasiInput = document.getElementById('lokasi').value.trim().toLowerCase();
+  const tahunInput  = document.getElementById('tahun').value.trim();
+  const passInputVal = document.getElementById('password').value.trim();
 
   Promise.all(SHEET_URLS.map(url => fetch(url).then(r => r.text())))
     .then(allCsv => {
       const allRows = [];
       allCsv.forEach((csv, idx) => {
         const rows = Papa.parse(csv.trim(), {skipEmptyLines: true}).data;
-        if (idx === 0) allRows.push(rows[0]); // Ambil header hanya dari file pertama
+        if (idx === 0) allRows.push(rows[0]);
         allRows.push(...rows.slice(1));
       });
 
       const header = allRows[0].map(h => h.trim());
-      const iNoFak    = header.indexOf('No. Faktur');
-      const iTglFak   = header.indexOf('Tgl Faktur');
-      const iNoPel    = header.indexOf('No. Pelanggan');
-      const iNamaPel  = header.indexOf('Nama Pelanggan');
-      const iNilai    = header.indexOf('Nilai Faktur');
+      const iNoFak = header.indexOf('No. Faktur');
+      const iTglFak = header.indexOf('Tgl Faktur');
+      const iNoPel = header.indexOf('No. Pelanggan');
+      const iNamaPel = header.indexOf('Nama Pelanggan');
+      const iNilai = header.indexOf('Nilai Faktur');
       const iTerutang = header.indexOf('Terutang');
       const iTglBayar = header.indexOf('Tanggal Bayar');
-      const iKet      = header.indexOf('Keterangan');
-      const iPass     = header.indexOf('Password');
+      const iKet = header.indexOf('Keterangan');
+      const iPass = header.indexOf('Password');
 
       const hasil = allRows.slice(1).filter(r => {
         const noPel = r[iNoPel]?.trim().toLowerCase();
-        const tgl   = r[iTglFak]?.trim();
+        const tgl = r[iTglFak]?.trim();
         const tahunFak = tgl && tgl.split(/[./-]/)[2];
         const passSheet = r[iPass]?.trim();
-        
-        return noPel === lokasi && tahunFak === tahun &&
-               (pass === MASTER_PASSWORD || pass === passSheet);
+        return noPel === lokasiInput && tahunFak === tahunInput &&
+               (passInputVal === MASTER_PASSWORD || passInputVal === passSheet);
       });
 
-      const form = document.getElementById('filterForm');
-      const container = document.getElementById('hasilContainer');
-      const body = document.getElementById('hasilBody');
-      const totalDiv = document.getElementById('total');
-      
       if (hasil.length === 0) {
         alert("Data tidak ditemukan atau password salah");
         return;
       }
 
-      body.innerHTML = '';
-      form.style.display = 'none';
-      container.style.display = 'block';
+      document.getElementById('filterForm').style.display = 'none';
+      document.getElementById('hasilContainer').style.display = 'block';
       document.getElementById('download').style.display = 'block';
       document.getElementById('backBtn').style.display = 'block';
 
+      const body = document.getElementById('hasilBody');
+      body.innerHTML = '';
       let totalTerutang = 0;
       let totalNilai = 0;
 
@@ -283,60 +281,26 @@ document.getElementById('filterForm').addEventListener('submit', e => {
           tr.appendChild(td);
         };
         addCell(idx + 1);
-        [iNoFak,iTglFak,iNoPel,iNamaPel,iNilai,iTerutang,iTglBayar,iKet]
-          .forEach(idxCol => addCell(r[idxCol]));
+        [iNoFak, iTglFak, iNoPel, iNamaPel, iNilai, iTerutang, iTglBayar, iKet].forEach(c => addCell(r[c]));
         body.appendChild(tr);
-        
-        // Bersihkan string dari karakter non-numerik sebelum parse
-        const cleanNum = val => parseFloat(String(val).replace(/[^0-9.-]+/g,"")) || 0;
-        totalNilai += cleanNum(r[iNilai]);
-        totalTerutang += cleanNum(r[iTerutang]);
+        totalNilai += parseFloat(String(r[iNilai]).replace(/[^0-9.-]+/g,"")) || 0;
+        totalTerutang += parseFloat(String(r[iTerutang]).replace(/[^0-9.-]+/g,"")) || 0;
       });
 
-      totalDiv.textContent =
-        "Total Nilai Faktur: Rp " + totalNilai.toLocaleString('id-ID') +
-        " | Total Terutang: Rp " + totalTerutang.toLocaleString('id-ID');
-    })
-    .catch(err => {
-      console.error(err);
-      alert("Gagal mengambil data. Pastikan koneksi internet aktif.");
+      document.getElementById('total').textContent = 
+        `Total Nilai Faktur: Rp ${totalNilai.toLocaleString('id-ID')} | Total Terutang: Rp ${totalTerutang.toLocaleString('id-ID')}`;
     });
 });
 
-// === 4. Tombol Kembali ===
 document.getElementById('backBtn').addEventListener('click', () => {
-  document.getElementById('hasilContainer').style.display = 'none';
-  document.getElementById('download').style.display = 'none';
-  document.getElementById('backBtn').style.display = 'none';
-  const form = document.getElementById('filterForm');
-  form.style.display = 'flex';
-  form.reset();
-  togglePassBtn.style.display = 'none';
+  location.reload(); // Cara termudah untuk reset semua kondisi
 });
 
-// === 5. Download PDF ===
 document.getElementById('download').addEventListener('click', () => {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({orientation:'landscape'});
-  const today = new Date();
-  const tglCetak = `Dicetak pada: ${today.toLocaleDateString('id-ID')}`;
-  
-  doc.setFontSize(16);
   doc.text("Index AR PBC", 14, 15);
-  doc.setFontSize(10);
-  doc.text(tglCetak, doc.internal.pageSize.getWidth() - 60, 15);
-  
-  doc.autoTable({ 
-    html: '#hasilTable', 
-    startY: 25,
-    theme: 'grid',
-    headStyles: { fillColor: [24, 119, 242] }
-  });
-  
-  const finalY = doc.lastAutoTable.finalY + 10;
-  doc.text(document.getElementById('total').textContent, 14, finalY);
-  doc.text("PT. Putra Citanusa @ 2025", 14, doc.internal.pageSize.getHeight() - 10);
-  
+  doc.autoTable({ html: '#hasilTable', startY: 25 });
   doc.save("Index_AR_PBC.pdf");
 });
 </script>
