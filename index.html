@@ -36,17 +36,26 @@
     border-radius: 6px;
     font-size: 14px;
     box-sizing: border-box;
-    /* Memastikan background input putih */
-    background-color: #ffffff !important; 
+    /* FIX: Memaksa background tetap putih saat diketik/autocomplete */
+    background-color: white !important;
+    color: black !important;
   }
+
+  /* Mencegah perubahan warna background dari browser (Webkit) */
+  #filterForm input:-webkit-autofill,
+  #filterForm input:-webkit-autofill:hover, 
+  #filterForm input:-webkit-autofill:focus {
+    -webkit-box-shadow: 0 0 0px 1000px white inset !important;
+    box-shadow: 0 0 0px 1000px white inset !important;
+    -webkit-text-fill-color: black !important;
+  }
+
   #filterForm input:focus {
     outline: none;
     border-color: #1877f2;
     box-shadow: 0 0 0 1px #1877f2;
+    background-color: white !important;
   }
-  
-  /* Catatan: Styling dropdown datalist terbatas karena render browser, 
-     namun memastikan warna dasar input putih membantu visibilitas */
 
   .toggle-eye {
     position: absolute;
