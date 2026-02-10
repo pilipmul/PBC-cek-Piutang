@@ -30,7 +30,7 @@
     width: 280px;
   }
 
-  /* PERBAIKAN UTAMA CSS INPUT */
+  /* SOLUSI ANTI-TRANSPARAN & ANTI-HITAM */
   #filterForm input {
     width: 100%;
     padding: 10px 36px 10px 10px;
@@ -38,24 +38,35 @@
     border-radius: 6px;
     font-size: 14px;
     box-sizing: border-box;
-    /* Memaksa background putih di semua kondisi */
-    background-color: #ffffff !important;
-    color: #000000 !important;
+    
+    /* Memaksa warna putih menggunakan gradien (lebih kuat dari warna solid) */
+    background-image: linear-gradient(white, white) !important;
+    background-color: white !important;
+    color: black !important;
+    
+    /* Menghapus gaya default sistem */
     appearance: none;
     -webkit-appearance: none;
   }
 
-  /* Menghilangkan transparansi paksa saat autocomplete/datalist aktif */
+  /* Menangani kondisi saat browser mencoba mengubah warna secara otomatis */
   #filterForm input:-webkit-autofill,
   #filterForm input:-webkit-autofill:hover, 
   #filterForm input:-webkit-autofill:focus,
-  #filterForm input:active,
-  #filterForm input:focus {
-    /* Menggunakan inner shadow super besar untuk menutupi transparansi */
+  #filterForm input:focus,
+  #filterForm input:active {
     -webkit-box-shadow: 0 0 0px 1000px white inset !important;
     box-shadow: 0 0 0px 1000px white inset !important;
     -webkit-text-fill-color: black !important;
-    transition: background-color 5000s ease-in-out 0s;
+    background-image: linear-gradient(white, white) !important;
+  }
+
+  /* Memastikan teks tetap terlihat hitam saat mode gelap browser aktif */
+  @media (prefers-color-scheme: dark) {
+    #filterForm input {
+      color: black !important;
+      background-color: white !important;
+    }
   }
 
   #filterForm input:focus {
