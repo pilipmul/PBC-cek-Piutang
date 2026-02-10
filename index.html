@@ -29,8 +29,6 @@
     position: relative;
     width: 280px;
   }
-
-  /* SOLUSI ANTI-TRANSPARAN & ANTI-HITAM */
   #filterForm input {
     width: 100%;
     padding: 10px 36px 10px 10px;
@@ -38,41 +36,43 @@
     border-radius: 6px;
     font-size: 14px;
     box-sizing: border-box;
-    
-    /* Memaksa warna putih menggunakan gradien (lebih kuat dari warna solid) */
-    background-image: linear-gradient(white, white) !important;
-    background-color: white !important;
-    color: black !important;
-    
-    /* Menghapus gaya default sistem */
-    appearance: none;
-    -webkit-appearance: none;
+    background-color: #fff;
+    color: #000;
   }
-
-  /* Menangani kondisi saat browser mencoba mengubah warna secara otomatis */
-  #filterForm input:-webkit-autofill,
-  #filterForm input:-webkit-autofill:hover, 
-  #filterForm input:-webkit-autofill:focus,
-  #filterForm input:focus,
-  #filterForm input:active {
-    -webkit-box-shadow: 0 0 0px 1000px white inset !important;
-    box-shadow: 0 0 0px 1000px white inset !important;
-    -webkit-text-fill-color: black !important;
-    background-image: linear-gradient(white, white) !important;
-  }
-
-  /* Memastikan teks tetap terlihat hitam saat mode gelap browser aktif */
-  @media (prefers-color-scheme: dark) {
-    #filterForm input {
-      color: black !important;
-      background-color: white !important;
-    }
-  }
-
   #filterForm input:focus {
     outline: none;
     border-color: #1877f2;
-    box-shadow: 0 0 0 1px #1877f2, 0 0 0px 1000px white inset !important;
+    box-shadow: 0 0 0 1px #1877f2;
+  }
+
+  /* === Gaya Dropdown List Kustom === */
+  .custom-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: #ffffff; /* Putih Solid */
+    border: 1px solid #dddfe2;
+    border-radius: 0 0 6px 6px;
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 999;
+    display: none; /* Sembunyi di awal */
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  }
+  .custom-dropdown li {
+    padding: 10px;
+    font-size: 14px;
+    cursor: pointer;
+    color: #333;
+    border-bottom: 1px solid #f0f2f5;
+  }
+  .custom-dropdown li:hover {
+    background-color: #f0f2f5;
+    color: #1877f2;
   }
 
   .toggle-eye {
@@ -152,8 +152,8 @@
 
 <form id="filterForm">
   <div class="input-wrap">
-    <input type="text" id="lokasi" placeholder="Lokasi (No. Pelanggan)" list="lokasiList" autocomplete="off" required>
-    <datalist id="lokasiList"></datalist>
+    <input type="text" id="lokasi" placeholder="Lokasi (No. Pelanggan)" autocomplete="off" required>
+    <ul id="customDropdown" class="custom-dropdown"></ul>
   </div>
   <div class="input-wrap">
     <input type="number" id="tahun" placeholder="Tahun" required>
@@ -203,6 +203,7 @@ const MASTER_PASSWORD = "master123";
 
 let listLokasiMaster = [];
 
+// === LOGIKA DROPDOWN KUSTOM ===
 function fetchMasterLokasi() {
   fetch(SHEET_URLS[0])
     .then(res => res.text())
@@ -216,23 +217,47 @@ function fetchMasterLokasi() {
     });
 }
 
-document.getElementById('lokasi').addEventListener('input', function() {
-  const dl = document.getElementById('lokasiList');
-  if (this.value.trim() === "") {
-    dl.innerHTML = ""; 
-  } else {
-    if (dl.children.length === 0) {
-      listLokasiMaster.forEach(loc => {
-        const opt = document.createElement('option');
-        opt.value = loc;
-        dl.appendChild(opt);
+const inputLokasi = document.getElementById('lokasi');
+const dropdown = document.getElementById('customDropdown');
+
+inputLokasi.addEventListener('input', function() {
+  const val = this.value.trim().toLowerCase();
+  dropdown.innerHTML = "";
+
+  if (val === "") {
+    dropdown.style.display = "none";
+    return;
+  }
+
+  // Filter data sesuai ketikan
+  const matches = listLokasiMaster.filter(loc => loc.toLowerCase().includes(val));
+
+  if (matches.length > 0) {
+    matches.forEach(match => {
+      const li = document.createElement('li');
+      li.textContent = match;
+      li.addEventListener('click', () => {
+        inputLokasi.value = match;
+        dropdown.style.display = "none";
       });
-    }
+      dropdown.appendChild(li);
+    });
+    dropdown.style.display = "block";
+  } else {
+    dropdown.style.display = "none";
+  }
+});
+
+// Tutup dropdown jika klik di luar
+document.addEventListener('click', (e) => {
+  if (!inputLokasi.contains(e.target) && !dropdown.contains(e.target)) {
+    dropdown.style.display = "none";
   }
 });
 
 window.addEventListener('DOMContentLoaded', fetchMasterLokasi);
 
+// === LOGIKA PASSWORD ===
 const passInput = document.getElementById('password');
 const toggleBtn = document.getElementById('togglePass');
 const eyeLine = document.getElementById('eye-line');
@@ -251,11 +276,12 @@ toggleBtn.addEventListener('click', () => {
   }
 });
 
+// === FILTER & RENDER ===
 document.getElementById('filterForm').addEventListener('submit', e => {
   e.preventDefault();
-  const lokasiInput = document.getElementById('lokasi').value.trim().toLowerCase();
+  const lokasiInput = inputLokasi.value.trim().toLowerCase();
   const tahunInput  = document.getElementById('tahun').value.trim();
-  const passInputVal = document.getElementById('password').value.trim();
+  const passInputVal = passInput.value.trim();
 
   Promise.all(SHEET_URLS.map(url => fetch(url).then(r => r.text())))
     .then(allCsv => {
