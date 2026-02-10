@@ -31,7 +31,7 @@
   }
   #filterForm input {
     width: 100%;
-    padding: 10px 36px 10px 10px; /* ruang untuk icon */
+    padding: 10px 36px 10px 10px;
     border: 1px solid #dddfe2;
     border-radius: 6px;
     font-size: 14px;
@@ -71,7 +71,6 @@
   }
   #filterForm button[type="submit"]:hover { background: #166fe5; }
 
-  /* tombol tambahan */
   #download, #backBtn {
     display: none;
     width: 200px;
@@ -93,13 +92,12 @@
   th, td { border: 1px solid #ccc; padding: 6px; text-align: left; }
   th { background: #1877f2; color: #fff; }
 
-  /* ➜ Tambahkan kode berikut */
-#hasilTable th:nth-child(6),
-#hasilTable th:nth-child(7),
-#hasilTable td:nth-child(6),
-#hasilTable td:nth-child(7) {
-  text-align: right;
-}
+  #hasilTable th:nth-child(6),
+  #hasilTable th:nth-child(7),
+  #hasilTable td:nth-child(6),
+  #hasilTable td:nth-child(7) {
+    text-align: right;
+  }
   
   #total { margin-top:1em; font-weight: bold; text-align:center; }
 
@@ -116,11 +114,13 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 </head>
 <body>
+
 <h1 style="text-align:center;margin-top:20px;">Index AR PBC</h1>
 
 <form id="filterForm">
   <div class="input-wrap">
-    <input type="text" id="lokasi" placeholder="Lokasi" required>
+    <input type="text" id="lokasi" placeholder="Lokasi (No. Pelanggan)" list="lokasiList" required>
+    <datalist id="lokasiList"></datalist>
   </div>
   <div class="input-wrap">
     <input type="number" id="tahun" placeholder="Tahun" required>
@@ -128,10 +128,9 @@
   <div class="input-wrap">
     <input type="password" id="password" placeholder="Password" required>
     <button type="button" class="toggle-eye" id="togglePass" style="display:none;">
-      <!-- ikon mata awalnya tertutup (slash) -->
       <svg viewBox="0 0 24 24" id="eye-icon">
         <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zm0 12a4.5 4.5 0 1 1 0-9 4.5 4.5 0 0 1 0 9zm0-7a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z"/>
-        <line x1="4" y1="4" x2="20" y2="20" stroke="#606770" stroke-width="2"/>
+        <line x1="4" y1="4" x2="20" y2="20" stroke="#606770" stroke-width="2" id="eye-line"/>
       </svg>
     </button>
   </div>
@@ -165,26 +164,62 @@
 
 <script>
 const SHEET_URLS = [
-  "https://docs.google.com/spreadsheets/d/e/2PACX-1vT-PAf-G7kujpAjGhWROCvIrQ2gxn4MPjiCdbmYeowwjox00VKu2mq5cVFkgSUNg91tzJXfPHF34np7/pub?gid=126462838&single=true&output=csv",
-  "URL_CSV_AR_2024",
-  "URL_CSV_AR_2025"
+  "https://docs.google.com/spreadsheets/d/e/2PACX-1vT-PAf-G7kujpAjGhWROCvIrQ2gxn4MPjiCdbmYeowwjox00VKu2mq5cVFkgSUNg91tzJXfPHF34np7/pub?gid=126462838&single=true&output=csv"
+  // Tambahkan URL CSV lainnya di sini jika ada
 ];
 const MASTER_PASSWORD = "master123";
 
-// === Toggle password ===
-document.getElementById('togglePass').addEventListener('click', () => {
-  const pwd = document.getElementById('password');
-  const icon = document.getElementById('eye-icon');
-  if (pwd.type === "password") {
-    pwd.type = "text";
-    icon.innerHTML = '<path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zm0 12a4.5 4.5 0 1 1 0-9 4.5 4.5 0 0 1 0 9zm0-7a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z"/>';
+// === 1. Fungsi Memuat Sugesti Lokasi Otomatis ===
+function loadSuggestions() {
+  const datalist = document.getElementById('lokasiList');
+  // Kita ambil dari URL pertama sebagai master list lokasi
+  fetch(SHEET_URLS[0])
+    .then(res => res.text())
+    .then(csv => {
+      const data = Papa.parse(csv.trim(), {skipEmptyLines: true}).data;
+      const header = data[0];
+      const iNoPel = header.indexOf('No. Pelanggan');
+      
+      if (iNoPel === -1) return;
+
+      // Ambil No. Pelanggan unik dan urutkan
+      const uniqueLoc = [...new Set(data.slice(1).map(row => row[iNoPel]))].sort();
+      
+      datalist.innerHTML = '';
+      uniqueLoc.forEach(loc => {
+        if(loc) {
+          const opt = document.createElement('option');
+          opt.value = loc;
+          datalist.appendChild(opt);
+        }
+      });
+    })
+    .catch(err => console.error("Gagal memuat sugesti:", err));
+}
+
+// Jalankan saat halaman dibuka
+window.addEventListener('DOMContentLoaded', loadSuggestions);
+
+// === 2. Logika Toggle Password ===
+const passField = document.getElementById('password');
+const togglePassBtn = document.getElementById('togglePass');
+const eyeLine = document.getElementById('eye-line');
+
+passField.addEventListener('input', () => {
+  togglePassBtn.style.display = passField.value ? 'block' : 'none';
+});
+
+togglePassBtn.addEventListener('click', () => {
+  if (passField.type === "password") {
+    passField.type = "text";
+    eyeLine.style.display = "none";
   } else {
-    pwd.type = "password";
-    icon.innerHTML = '<path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zm0 12a4.5 4.5 0 1 1 0-9 4.5 4.5 0 0 1 0 9zm0-7a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z"/><line x1="4" y1="4" x2="20" y2="20" stroke="#606770" stroke-width="2"/>';
+    passField.type = "password";
+    eyeLine.style.display = "block";
   }
 });
 
-// === Filter data & render ===
+// === 3. Filter data & render ===
 document.getElementById('filterForm').addEventListener('submit', e => {
   e.preventDefault();
   const lokasi = document.getElementById('lokasi').value.trim().toLowerCase();
@@ -196,53 +231,42 @@ document.getElementById('filterForm').addEventListener('submit', e => {
       const allRows = [];
       allCsv.forEach((csv, idx) => {
         const rows = Papa.parse(csv.trim(), {skipEmptyLines: true}).data;
-        if (idx === 0) allRows.push(rows[0]);
+        if (idx === 0) allRows.push(rows[0]); // Ambil header hanya dari file pertama
         allRows.push(...rows.slice(1));
       });
 
       const header = allRows[0].map(h => h.trim());
-      const iNoFak   = header.indexOf('No. Faktur');
-      const iTglFak  = header.indexOf('Tgl Faktur');
-      const iNoPel   = header.indexOf('No. Pelanggan');
-      const iNamaPel = header.indexOf('Nama Pelanggan');
-      const iNilai   = header.indexOf('Nilai Faktur');
-      const iTerutang= header.indexOf('Terutang');
-      const iTglBayar= header.indexOf('Tanggal Bayar');
-      const iKet     = header.indexOf('Keterangan');
-      const iPass    = header.indexOf('Password');
+      const iNoFak    = header.indexOf('No. Faktur');
+      const iTglFak   = header.indexOf('Tgl Faktur');
+      const iNoPel    = header.indexOf('No. Pelanggan');
+      const iNamaPel  = header.indexOf('Nama Pelanggan');
+      const iNilai    = header.indexOf('Nilai Faktur');
+      const iTerutang = header.indexOf('Terutang');
+      const iTglBayar = header.indexOf('Tanggal Bayar');
+      const iKet      = header.indexOf('Keterangan');
+      const iPass     = header.indexOf('Password');
 
       const hasil = allRows.slice(1).filter(r => {
         const noPel = r[iNoPel]?.trim().toLowerCase();
         const tgl   = r[iTglFak]?.trim();
         const tahunFak = tgl && tgl.split(/[./-]/)[2];
         const passSheet = r[iPass]?.trim();
+        
         return noPel === lokasi && tahunFak === tahun &&
                (pass === MASTER_PASSWORD || pass === passSheet);
       });
-
-      // === Tampilkan ikon mata hanya saat password terisi ===
-        const passField  = document.getElementById('password');
-        const togglePass = document.getElementById('togglePass');
-
-        passField.addEventListener('input', () => {
-          togglePass.style.display = passField.value ? 'block' : 'none';
-        });
 
       const form = document.getElementById('filterForm');
       const container = document.getElementById('hasilContainer');
       const body = document.getElementById('hasilBody');
       const totalDiv = document.getElementById('total');
-      body.innerHTML = '';
-      totalDiv.textContent = '';
-      document.getElementById('download').style.display = 'none';
-      document.getElementById('backBtn').style.display = 'none';
-      container.style.display = 'none';
-
+      
       if (hasil.length === 0) {
         alert("Data tidak ditemukan atau password salah");
         return;
       }
 
+      body.innerHTML = '';
       form.style.display = 'none';
       container.style.display = 'block';
       document.getElementById('download').style.display = 'block';
@@ -250,6 +274,7 @@ document.getElementById('filterForm').addEventListener('submit', e => {
 
       let totalTerutang = 0;
       let totalNilai = 0;
+
       hasil.forEach((r, idx) => {
         const tr = document.createElement('tr');
         const addCell = txt => {
@@ -261,8 +286,11 @@ document.getElementById('filterForm').addEventListener('submit', e => {
         [iNoFak,iTglFak,iNoPel,iNamaPel,iNilai,iTerutang,iTglBayar,iKet]
           .forEach(idxCol => addCell(r[idxCol]));
         body.appendChild(tr);
-        totalTerutang += parseFloat(r[iTerutang]) || 0;
-        totalNilai    += parseFloat(r[iNilai]) || 0;
+        
+        // Bersihkan string dari karakter non-numerik sebelum parse
+        const cleanNum = val => parseFloat(String(val).replace(/[^0-9.-]+/g,"")) || 0;
+        totalNilai += cleanNum(r[iNilai]);
+        totalTerutang += cleanNum(r[iTerutang]);
       });
 
       totalDiv.textContent =
@@ -271,10 +299,11 @@ document.getElementById('filterForm').addEventListener('submit', e => {
     })
     .catch(err => {
       console.error(err);
-      alert("Gagal mengambil data");
+      alert("Gagal mengambil data. Pastikan koneksi internet aktif.");
     });
 });
 
+// === 4. Tombol Kembali ===
 document.getElementById('backBtn').addEventListener('click', () => {
   document.getElementById('hasilContainer').style.display = 'none';
   document.getElementById('download').style.display = 'none';
@@ -282,30 +311,32 @@ document.getElementById('backBtn').addEventListener('click', () => {
   const form = document.getElementById('filterForm');
   form.style.display = 'flex';
   form.reset();
+  togglePassBtn.style.display = 'none';
 });
 
-// === Download PDF ===
+// === 5. Download PDF ===
 document.getElementById('download').addEventListener('click', () => {
   const { jsPDF } = window.jspdf;
-  if (!jsPDF) { alert("jsPDF belum termuat"); return; }
   const doc = new jsPDF({orientation:'landscape'});
   const today = new Date();
-  const bulan = today.toLocaleString('id-ID',{month:'long'});
-  const tglCetak = `Dicetak pada tanggal ${today.getDate()} - ${bulan} - ${today.getFullYear()}`;
+  const tglCetak = `Dicetak pada: ${today.toLocaleDateString('id-ID')}`;
+  
   doc.setFontSize(16);
   doc.text("Index AR PBC", 14, 15);
   doc.setFontSize(10);
-  const pageWidth = doc.internal.pageSize.getWidth();
-  doc.text(tglCetak, pageWidth - doc.getTextWidth(tglCetak) - 14, 15);
-  doc.autoTable({ html: '#hasilTable', startY: 25 });
-  const finalY = (doc.lastAutoTable?.finalY || 25) + 10;
+  doc.text(tglCetak, doc.internal.pageSize.getWidth() - 60, 15);
+  
+  doc.autoTable({ 
+    html: '#hasilTable', 
+    startY: 25,
+    theme: 'grid',
+    headStyles: { fillColor: [24, 119, 242] }
+  });
+  
+  const finalY = doc.lastAutoTable.finalY + 10;
   doc.text(document.getElementById('total').textContent, 14, finalY);
-  const footerText = "PT. Putra Citanusa @ 2025";
-  doc.text(
-    footerText,
-    (pageWidth - doc.getTextWidth(footerText)) / 2,
-    doc.internal.pageSize.getHeight() - 10
-  );
+  doc.text("PT. Putra Citanusa @ 2025", 14, doc.internal.pageSize.getHeight() - 10);
+  
   doc.save("Index_AR_PBC.pdf");
 });
 </script>
