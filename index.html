@@ -19,7 +19,6 @@
     font-size: 14px; box-sizing: border-box; background-color: #fff;
   }
 
-  /* === Gaya Dropdown Lokasi === */
   .custom-dropdown {
     position: absolute; top: 100%; left: 0; right: 0; background: #fff;
     border: 1px solid #dddfe2; border-radius: 0 0 6px 6px; max-height: 200px;
@@ -29,22 +28,20 @@
   .custom-dropdown li { padding: 10px; cursor: pointer; border-bottom: 1px solid #f0f2f5; }
   .custom-dropdown li:hover { background: #f0f2f5; color: #1877f2; }
 
-  /* === Tabel & Header Ala Google Sheets === */
   table { border-collapse: collapse; width: 100%; background:#fff; font-size: 13px; table-layout: auto; }
   th, td { border: 1px solid #ccc; padding: 8px; text-align: left; position: relative; }
-  th { background: #1877f2; color: #fff; padding-right: 25px; user-select: none; }
+  th { background: #1877f2; color: #fff; padding-right: 25px; user-select: none; cursor: pointer; }
   
-  /* Ikon Filter di Header */
   .filter-icon {
     position: absolute; right: 5px; top: 50%; transform: translateY(-50%);
-    cursor: pointer; width: 14px; height: 14px; fill: white;
+    width: 14px; height: 14px; fill: white;
   }
 
-  /* Menu Pop-up Filter */
+  /* === Gaya Menu Filter Pop-up === */
   .filter-menu {
     position: absolute; top: 100%; left: 0; background: white; color: black;
     border: 1px solid #ccc; box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-    z-index: 1000; display: none; width: 200px; padding: 10px; border-radius: 4px;
+    z-index: 1000; display: none; width: 220px; padding: 10px; border-radius: 4px;
   }
   .filter-menu h4 { margin: 0 0 10px 0; font-size: 12px; border-bottom: 1px solid #eee; padding-bottom: 5px; }
   .filter-menu button {
@@ -52,7 +49,18 @@
     padding: 8px; cursor: pointer; font-size: 13px;
   }
   .filter-menu button:hover { background: #f0f2f5; }
-  .checkbox-list { max-height: 150px; overflow-y: auto; margin-top: 10px; border: 1px solid #eee; padding: 5px; }
+
+  /* Input Box & Select All di dalam menu */
+  .filter-search-box {
+    width: 100%; padding: 6px; margin: 5px 0; border: 1px solid #ddd;
+    border-radius: 4px; box-sizing: border-box; font-size: 12px;
+  }
+  .select-all-btn {
+    font-size: 11px !important; color: #1877f2; padding: 4px 8px !important;
+    text-decoration: underline; background: none; cursor: pointer;
+  }
+
+  .checkbox-list { max-height: 150px; overflow-y: auto; margin-top: 5px; border: 1px solid #eee; padding: 5px; }
   .checkbox-item { display: flex; align-items: center; gap: 5px; font-size: 12px; margin-bottom: 4px; }
 
   #total { margin-top:1em; font-weight: bold; text-align:center; }
@@ -100,11 +108,22 @@
 </div>
 
 <div id="filterMenu" class="filter-menu">
-  <h4 id="menuTitle">Filter</h4>
+  <h4 id="menuTitle">Opsi Kolom</h4>
   <button onclick="execSort('asc')">↑ Sort A to Z</button>
   <button onclick="execSort('desc')">↓ Sort Z to A</button>
+  
+  <hr style="border:0; border-top:1px solid #eee; margin:10px 0;">
+  
+  <input type="text" id="menuSearch" class="filter-search-box" placeholder="Cari nilai..." onkeyup="searchInMenu()">
+  
+  <div style="display:flex; justify-content: space-between;">
+    <button class="select-all-btn" onclick="toggleAllCheckboxes(true)">Pilih Semua</button>
+    <button class="select-all-btn" onclick="toggleAllCheckboxes(false)">Hapus Semua</button>
+  </div>
+
   <div class="checkbox-list" id="checkboxList"></div>
-  <button onclick="applyCheckboxFilter()" style="background:#1877f2; color:white; margin-top:10px; text-align:center;">Terapkan</button>
+  
+  <button onclick="applyCheckboxFilter()" style="background:#1877f2; color:white; margin-top:10px; text-align:center; border-radius:4px;">Terapkan Filter</button>
 </div>
 
 <button id="download">Download PDF</button>
@@ -116,7 +135,7 @@ const MASTER_PASSWORD = "master123";
 let fullData = []; 
 let activeColIndex = -1;
 
-// --- Pencarian Lokasi (Dropdown) ---
+// --- Dropdown Lokasi ---
 let listLokasiMaster = [];
 function fetchMasterLokasi() {
   fetch(SHEET_URLS[0]).then(res => res.text()).then(csv => {
@@ -142,7 +161,7 @@ inputLokasi.addEventListener('input', () => {
   dropdown.style.display = matches.length ? "block" : "none";
 });
 
-// --- Fetch & Submit ---
+// --- Submit Form ---
 document.getElementById('filterForm').onsubmit = (e) => {
   e.preventDefault();
   const lokasiInput = inputLokasi.value.trim().toLowerCase();
@@ -188,8 +207,10 @@ function renderTable(data) {
   document.getElementById('total').innerText = `Total Nilai: Rp ${totalN.toLocaleString('id-ID')} | Total Terutang: Rp ${totalT.toLocaleString('id-ID')}`;
 }
 
-// --- Logika Filter Ala Google Sheets ---
+// --- Fungsi Menu Filter Google Sheets ---
 const menu = document.getElementById('filterMenu');
+const searchBox = document.getElementById('menuSearch');
+
 document.querySelectorAll('th[data-col]').forEach(th => {
   th.onclick = (e) => {
     activeColIndex = parseInt(th.getAttribute('data-col'));
@@ -198,7 +219,8 @@ document.querySelectorAll('th[data-col]').forEach(th => {
     menu.style.top = (rect.bottom + window.scrollY) + 'px';
     menu.style.left = rect.left + 'px';
     
-    // Isi Checkbox unik
+    searchBox.value = ''; // Reset search box
+    
     const uniqueVals = [...new Set(fullData.map(r => r[activeColIndex]))].sort();
     const list = document.getElementById('checkboxList');
     list.innerHTML = '';
@@ -208,6 +230,24 @@ document.querySelectorAll('th[data-col]').forEach(th => {
     e.stopPropagation();
   };
 });
+
+function searchInMenu() {
+  const filter = searchBox.value.toLowerCase();
+  const items = document.querySelectorAll('.checkbox-item');
+  items.forEach(item => {
+    const text = item.innerText.toLowerCase();
+    item.style.display = text.includes(filter) ? "flex" : "none";
+  });
+}
+
+function toggleAllCheckboxes(state) {
+  const checkboxes = document.querySelectorAll('#checkboxList input[type="checkbox"]');
+  checkboxes.forEach(cb => {
+    if (cb.parentElement.style.display !== 'none') {
+      cb.checked = state;
+    }
+  });
+}
 
 function execSort(dir) {
   fullData.sort((a, b) => {
