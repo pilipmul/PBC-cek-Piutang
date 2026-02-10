@@ -29,6 +29,8 @@
     position: relative;
     width: 280px;
   }
+
+  /* PERBAIKAN UTAMA CSS INPUT */
   #filterForm input {
     width: 100%;
     padding: 10px 36px 10px 10px;
@@ -36,25 +38,30 @@
     border-radius: 6px;
     font-size: 14px;
     box-sizing: border-box;
-    /* FIX: Memaksa background tetap putih saat diketik/autocomplete */
-    background-color: white !important;
-    color: black !important;
+    /* Memaksa background putih di semua kondisi */
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    appearance: none;
+    -webkit-appearance: none;
   }
 
-  /* Mencegah perubahan warna background dari browser (Webkit) */
+  /* Menghilangkan transparansi paksa saat autocomplete/datalist aktif */
   #filterForm input:-webkit-autofill,
   #filterForm input:-webkit-autofill:hover, 
-  #filterForm input:-webkit-autofill:focus {
+  #filterForm input:-webkit-autofill:focus,
+  #filterForm input:active,
+  #filterForm input:focus {
+    /* Menggunakan inner shadow super besar untuk menutupi transparansi */
     -webkit-box-shadow: 0 0 0px 1000px white inset !important;
     box-shadow: 0 0 0px 1000px white inset !important;
     -webkit-text-fill-color: black !important;
+    transition: background-color 5000s ease-in-out 0s;
   }
 
   #filterForm input:focus {
     outline: none;
     border-color: #1877f2;
-    box-shadow: 0 0 0 1px #1877f2;
-    background-color: white !important;
+    box-shadow: 0 0 0 1px #1877f2, 0 0 0px 1000px white inset !important;
   }
 
   .toggle-eye {
