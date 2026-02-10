@@ -37,7 +37,6 @@
     width: 14px; height: 14px; fill: white;
   }
 
-  /* === Gaya Menu Filter Pop-up === */
   .filter-menu {
     position: absolute; top: 100%; left: 0; background: white; color: black;
     border: 1px solid #ccc; box-shadow: 0 4px 10px rgba(0,0,0,0.2);
@@ -50,7 +49,6 @@
   }
   .filter-menu button:hover { background: #f0f2f5; }
 
-  /* Input Box & Select All di dalam menu */
   .filter-search-box {
     width: 100%; padding: 6px; margin: 5px 0; border: 1px solid #ddd;
     border-radius: 4px; box-sizing: border-box; font-size: 12px;
@@ -92,14 +90,14 @@
     <thead>
       <tr id="headerRow">
         <th>No.</th>
-        <th data-col="1">No. Faktur <svg class="filter-icon" viewBox="0 0 20 20"><path d="M5 8l5 5 5-5H5z"/></svg></th>
-        <th data-col="2">Tgl Faktur <svg class="filter-icon" viewBox="0 0 20 20"><path d="M5 8l5 5 5-5H5z"/></svg></th>
-        <th data-col="3">No. Pelanggan <svg class="filter-icon" viewBox="0 0 20 20"><path d="M5 8l5 5 5-5H5z"/></svg></th>
-        <th data-col="4">Nama Pelanggan <svg class="filter-icon" viewBox="0 0 20 20"><path d="M5 8l5 5 5-5H5z"/></svg></th>
-        <th data-col="5">Nilai Faktur <svg class="filter-icon" viewBox="0 0 20 20"><path d="M5 8l5 5 5-5H5z"/></svg></th>
-        <th data-col="6">Terutang <svg class="filter-icon" viewBox="0 0 20 20"><path d="M5 8l5 5 5-5H5z"/></svg></th>
-        <th data-col="7">Tanggal Bayar <svg class="filter-icon" viewBox="0 0 20 20"><path d="M5 8l5 5 5-5H5z"/></svg></th>
-        <th data-col="8">Keterangan <svg class="filter-icon" viewBox="0 0 20 20"><path d="M5 8l5 5 5-5H5z"/></svg></th>
+        <th data-col="0">No. Faktur <svg class="filter-icon" viewBox="0 0 20 20"><path d="M5 8l5 5 5-5H5z"/></svg></th>
+        <th data-col="1">Tgl Faktur <svg class="filter-icon" viewBox="0 0 20 20"><path d="M5 8l5 5 5-5H5z"/></svg></th>
+        <th data-col="2">No. Pelanggan <svg class="filter-icon" viewBox="0 0 20 20"><path d="M5 8l5 5 5-5H5z"/></svg></th>
+        <th data-col="3">Nama Pelanggan <svg class="filter-icon" viewBox="0 0 20 20"><path d="M5 8l5 5 5-5H5z"/></svg></th>
+        <th data-col="4">Nilai Faktur <svg class="filter-icon" viewBox="0 0 20 20"><path d="M5 8l5 5 5-5H5z"/></svg></th>
+        <th data-col="5">Terutang <svg class="filter-icon" viewBox="0 0 20 20"><path d="M5 8l5 5 5-5H5z"/></svg></th>
+        <th data-col="6">Tanggal Bayar <svg class="filter-icon" viewBox="0 0 20 20"><path d="M5 8l5 5 5-5H5z"/></svg></th>
+        <th data-col="7">Keterangan <svg class="filter-icon" viewBox="0 0 20 20"><path d="M5 8l5 5 5-5H5z"/></svg></th>
       </tr>
     </thead>
     <tbody id="hasilBody"></tbody>
@@ -111,18 +109,13 @@
   <h4 id="menuTitle">Opsi Kolom</h4>
   <button onclick="execSort('asc')">↑ Sort A to Z</button>
   <button onclick="execSort('desc')">↓ Sort Z to A</button>
-  
   <hr style="border:0; border-top:1px solid #eee; margin:10px 0;">
-  
   <input type="text" id="menuSearch" class="filter-search-box" placeholder="Cari nilai..." onkeyup="searchInMenu()">
-  
   <div style="display:flex; justify-content: space-between;">
     <button class="select-all-btn" onclick="toggleAllCheckboxes(true)">Pilih Semua</button>
     <button class="select-all-btn" onclick="toggleAllCheckboxes(false)">Hapus Semua</button>
   </div>
-
   <div class="checkbox-list" id="checkboxList"></div>
-  
   <button onclick="applyCheckboxFilter()" style="background:#1877f2; color:white; margin-top:10px; text-align:center; border-radius:4px;">Terapkan Filter</button>
 </div>
 
@@ -133,15 +126,17 @@
 const SHEET_URLS = ["https://docs.google.com/spreadsheets/d/e/2PACX-1vT-PAf-G7kujpAjGhWROCvIrQ2gxn4MPjiCdbmYeowwjox00VKu2mq5cVFkgSUNg91tzJXfPHF34np7/pub?gid=126462838&single=true&output=csv"];
 const MASTER_PASSWORD = "master123";
 let fullData = []; 
+let filteredData = []; // Data yang sedang ditampilkan
 let activeColIndex = -1;
 
-// --- Dropdown Lokasi ---
-let listLokasiMaster = [];
 function fetchMasterLokasi() {
   fetch(SHEET_URLS[0]).then(res => res.text()).then(csv => {
     const parsed = Papa.parse(csv.trim()).data;
-    const iNoPel = parsed[0].indexOf('No. Pelanggan');
-    listLokasiMaster = [...new Set(parsed.slice(1).map(row => row[iNoPel]))].sort();
+    const header = parsed[0];
+    const iNoPel = header.indexOf('No. Pelanggan');
+    if(iNoPel !== -1) {
+      listLokasiMaster = [...new Set(parsed.slice(1).map(row => row[iNoPel]))].sort();
+    }
   });
 }
 window.addEventListener('DOMContentLoaded', fetchMasterLokasi);
@@ -152,7 +147,7 @@ inputLokasi.addEventListener('input', () => {
   const val = inputLokasi.value.toLowerCase();
   dropdown.innerHTML = "";
   if (!val) { dropdown.style.display="none"; return; }
-  const matches = listLokasiMaster.filter(l => l.toLowerCase().includes(val));
+  const matches = listLokasiMaster.filter(l => String(l).toLowerCase().includes(val));
   matches.forEach(m => {
     const li = document.createElement('li'); li.textContent = m;
     li.onclick = () => { inputLokasi.value = m; dropdown.style.display="none"; };
@@ -161,7 +156,6 @@ inputLokasi.addEventListener('input', () => {
   dropdown.style.display = matches.length ? "block" : "none";
 });
 
-// --- Submit Form ---
 document.getElementById('filterForm').onsubmit = (e) => {
   e.preventDefault();
   const lokasiInput = inputLokasi.value.trim().toLowerCase();
@@ -171,25 +165,37 @@ document.getElementById('filterForm').onsubmit = (e) => {
     let combined = [];
     csvs.forEach((csv, idx) => {
       const rows = Papa.parse(csv.trim()).data;
-      if(idx===0) combined.push(rows[0]);
+      if(idx === 0) combined.push(rows[0]);
       combined.push(...rows.slice(1));
     });
 
-    const h = combined[0];
-    const idxs = ['No. Faktur','Tgl Faktur','No. Pelanggan','Nama Pelanggan','Nilai Faktur','Terutang','Tanggal Bayar','Keterangan','Password'].map(name => h.indexOf(name));
+    const header = combined[0];
+    const iNoFak = header.indexOf('No. Faktur');
+    const iTglFak = header.indexOf('Tgl Faktur');
+    const iNoPel = header.indexOf('No. Pelanggan');
+    const iNamaPel = header.indexOf('Nama Pelanggan');
+    const iNilai = header.indexOf('Nilai Faktur');
+    const iTerutang = header.indexOf('Terutang');
+    const iTglBayar = header.indexOf('Tanggal Bayar');
+    const iKet = header.indexOf('Keterangan');
+    const iPass = header.indexOf('Password');
     
+    // Simpan data asli sesuai urutan gambar (0 s/d 7 untuk tampilan)
     fullData = combined.slice(1).filter(r => {
-      return r[idxs[2]]?.trim().toLowerCase() === lokasiInput && (passVal === MASTER_PASSWORD || passVal === r[idxs[8]]?.trim());
-    });
+      const noPel = r[iNoPel]?.trim().toLowerCase();
+      const passSheet = r[iPass]?.trim();
+      return noPel === lokasiInput && (passVal === MASTER_PASSWORD || passVal === passSheet);
+    }).map(r => [r[iNoFak], r[iTglFak], r[iNoPel], r[iNamaPel], r[iNilai], r[iTerutang], r[iTglBayar], r[iKet]]);
 
-    if(!fullData.length) return alert("Data tidak ditemukan");
+    if(!fullData.length) return alert("Data tidak ditemukan atau password salah");
     
+    filteredData = [...fullData];
     document.getElementById('filterForm').style.display = 'none';
     document.getElementById('hasilContainer').style.display = 'block';
     document.getElementById('download').style.display = 'block';
     document.getElementById('backBtn').style.display = 'block';
     
-    renderTable(fullData);
+    renderTable(filteredData);
   });
 };
 
@@ -199,15 +205,22 @@ function renderTable(data) {
   let totalN = 0, totalT = 0;
   data.forEach((r, i) => {
     const tr = document.createElement('tr');
-    tr.innerHTML = `<td>${i+1}</td><td>${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td><td>${r[4]}</td><td>${r[5]}</td><td>${r[6]}</td><td>${r[7]}</td><td>${r[8]}</td>`;
+    tr.innerHTML = `<td>${i+1}</td>
+                    <td>${r[0] || ''}</td>
+                    <td>${r[1] || ''}</td>
+                    <td>${r[2] || ''}</td>
+                    <td>${r[3] || ''}</td>
+                    <td>${r[4] || ''}</td>
+                    <td>${r[5] || ''}</td>
+                    <td>${r[6] || ''}</td>
+                    <td>${r[7] || ''}</td>`;
     body.appendChild(tr);
-    totalN += parseFloat(r[5].replace(/[^0-9.-]+/g,"")) || 0;
-    totalT += parseFloat(r[6].replace(/[^0-9.-]+/g,"")) || 0;
+    totalN += parseFloat(String(r[4]).replace(/[^0-9.-]+/g,"")) || 0;
+    totalT += parseFloat(String(r[5]).replace(/[^0-9.-]+/g,"")) || 0;
   });
-  document.getElementById('total').innerText = `Total Nilai: Rp ${totalN.toLocaleString('id-ID')} | Total Terutang: Rp ${totalT.toLocaleString('id-ID')}`;
+  document.getElementById('total').innerText = `Total Nilai Faktur: Rp ${totalN.toLocaleString('id-ID')} | Total Terutang: Rp ${totalT.toLocaleString('id-ID')}`;
 }
 
-// --- Fungsi Menu Filter Google Sheets ---
 const menu = document.getElementById('filterMenu');
 const searchBox = document.getElementById('menuSearch');
 
@@ -219,8 +232,7 @@ document.querySelectorAll('th[data-col]').forEach(th => {
     menu.style.top = (rect.bottom + window.scrollY) + 'px';
     menu.style.left = rect.left + 'px';
     
-    searchBox.value = ''; // Reset search box
-    
+    searchBox.value = '';
     const uniqueVals = [...new Set(fullData.map(r => r[activeColIndex]))].sort();
     const list = document.getElementById('checkboxList');
     list.innerHTML = '';
@@ -243,41 +255,40 @@ function searchInMenu() {
 function toggleAllCheckboxes(state) {
   const checkboxes = document.querySelectorAll('#checkboxList input[type="checkbox"]');
   checkboxes.forEach(cb => {
-    if (cb.parentElement.style.display !== 'none') {
-      cb.checked = state;
-    }
+    if (cb.parentElement.style.display !== 'none') cb.checked = state;
   });
 }
 
 function execSort(dir) {
-  fullData.sort((a, b) => {
+  filteredData.sort((a, b) => {
     let valA = a[activeColIndex], valB = b[activeColIndex];
-    if(!isNaN(parseFloat(valA.replace(/[^0-9.-]+/g,"")))) {
-      valA = parseFloat(valA.replace(/[^0-9.-]+/g,""));
-      valB = parseFloat(valB.replace(/[^0-9.-]+/g,""));
+    if(!isNaN(parseFloat(String(valA).replace(/[^0-9.-]+/g,"")))) {
+      valA = parseFloat(String(valA).replace(/[^0-9.-]+/g,""));
+      valB = parseFloat(String(valB).replace(/[^0-9.-]+/g,""));
     }
     return dir === 'asc' ? (valA > valB ? 1 : -1) : (valA < valB ? 1 : -1);
   });
-  renderTable(fullData);
+  renderTable(filteredData);
   menu.style.display = 'none';
 }
 
 function applyCheckboxFilter() {
   const checked = Array.from(document.querySelectorAll('#checkboxList input:checked')).map(i => i.value);
-  const filtered = fullData.filter(r => checked.includes(r[activeColIndex]));
-  renderTable(filtered);
+  filteredData = fullData.filter(r => checked.includes(String(r[activeColIndex])));
+  renderTable(filteredData);
   menu.style.display = 'none';
 }
 
 document.onclick = () => menu.style.display = 'none';
 menu.onclick = (e) => e.stopPropagation();
-
 document.getElementById('backBtn').onclick = () => location.reload();
+
 document.getElementById('download').onclick = () => {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF('l');
-  doc.autoTable({ html: '#hasilTable' });
-  doc.save('Data.pdf');
+  doc.text("Index AR PBC", 14, 15);
+  doc.autoTable({ html: '#hasilTable', startY: 20 });
+  doc.save('Index_AR_PBC.pdf');
 };
 </script>
 </body>
