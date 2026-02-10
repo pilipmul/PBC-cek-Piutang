@@ -36,12 +36,18 @@
     border-radius: 6px;
     font-size: 14px;
     box-sizing: border-box;
+    /* Memastikan background input putih */
+    background-color: #ffffff !important; 
   }
   #filterForm input:focus {
     outline: none;
     border-color: #1877f2;
     box-shadow: 0 0 0 1px #1877f2;
   }
+  
+  /* Catatan: Styling dropdown datalist terbatas karena render browser, 
+     namun memastikan warna dasar input putih membantu visibilitas */
+
   .toggle-eye {
     position: absolute;
     right: 10px;
@@ -168,7 +174,6 @@ const SHEET_URLS = [
 ];
 const MASTER_PASSWORD = "master123";
 
-// --- LOGIKA DATA SUGESTI ---
 let listLokasiMaster = [];
 
 function fetchMasterLokasi() {
@@ -179,19 +184,17 @@ function fetchMasterLokasi() {
       const header = parsed[0];
       const iNoPel = header.indexOf('No. Pelanggan');
       if (iNoPel !== -1) {
-        // Ambil data unik untuk sugesti
         listLokasiMaster = [...new Set(parsed.slice(1).map(row => row[iNoPel]))].sort();
       }
     });
 }
 
-// Hanya tampilkan sugesti jika kolom tidak kosong
 document.getElementById('lokasi').addEventListener('input', function() {
   const dl = document.getElementById('lokasiList');
   if (this.value.trim() === "") {
     dl.innerHTML = ""; 
   } else {
-    if (dl.children.length === 0) { // Isi datalist jika masih kosong
+    if (dl.children.length === 0) {
       listLokasiMaster.forEach(loc => {
         const opt = document.createElement('option');
         opt.value = loc;
@@ -203,7 +206,6 @@ document.getElementById('lokasi').addEventListener('input', function() {
 
 window.addEventListener('DOMContentLoaded', fetchMasterLokasi);
 
-// --- LOGIKA PASSWORD ---
 const passInput = document.getElementById('password');
 const toggleBtn = document.getElementById('togglePass');
 const eyeLine = document.getElementById('eye-line');
@@ -222,7 +224,6 @@ toggleBtn.addEventListener('click', () => {
   }
 });
 
-// --- FILTER & RENDER ---
 document.getElementById('filterForm').addEventListener('submit', e => {
   e.preventDefault();
   const lokasiInput = document.getElementById('lokasi').value.trim().toLowerCase();
@@ -293,7 +294,7 @@ document.getElementById('filterForm').addEventListener('submit', e => {
 });
 
 document.getElementById('backBtn').addEventListener('click', () => {
-  location.reload(); // Cara termudah untuk reset semua kondisi
+  location.reload(); 
 });
 
 document.getElementById('download').addEventListener('click', () => {
