@@ -32,10 +32,9 @@
   th, td { border: 1px solid #ccc; padding: 8px; text-align: left; position: relative; }
   th { background: #1877f2; color: #fff; padding-right: 25px; user-select: none; cursor: pointer; }
   
-  /* Tambahan Style untuk Highlight */
   tbody tr { cursor: pointer; transition: background 0.2s; }
   tbody tr:hover { background-color: #f9f9f9; }
-  .highlight { background-color: #fff9c4 !important; } /* Warna kuning muda saat diklik */
+  .highlight { background-color: #fff9c4 !important; }
 
   .filter-icon {
     position: absolute; right: 5px; top: 50%; transform: translateY(-50%);
@@ -58,9 +57,12 @@
     width: 100%; padding: 6px; margin: 5px 0; border: 1px solid #ddd;
     border-radius: 4px; box-sizing: border-box; font-size: 12px;
   }
-  .select-all-btn {
-    font-size: 11px !important; color: #1877f2; padding: 4px 8px !important;
-    text-decoration: underline; background: none; cursor: pointer;
+  
+  /* Style untuk Master Checkbox */
+  .master-checkbox-container {
+    display: flex; align-items: center; gap: 5px; font-size: 12px;
+    padding: 5px 0; border-bottom: 1px solid #eee; margin-bottom: 5px;
+    font-weight: bold;
   }
 
   .checkbox-list { max-height: 150px; overflow-y: auto; margin-top: 5px; border: 1px solid #eee; padding: 5px; }
@@ -116,12 +118,13 @@
   <button onclick="execSort('desc')">↓ Sort Z to A</button>
   <hr style="border:0; border-top:1px solid #eee; margin:10px 0;">
   <input type="text" id="menuSearch" class="filter-search-box" placeholder="Cari nilai..." onkeyup="searchInMenu()">
-  <div style="display:flex; justify-content: space-between;">
-    <button class="select-all-btn" onclick="toggleAllCheckboxes(true)">Pilih Semua</button>
-    <button class="select-all-btn" onclick="toggleAllCheckboxes(false)">Hapus Semua</button>
+  
+  <div class="master-checkbox-container">
+    <input type="checkbox" id="masterCheckbox" checked onclick="toggleAllCheckboxes(this.checked)"> <span>Pilih Semua</span>
   </div>
+
   <div class="checkbox-list" id="checkboxList"></div>
-  <button onclick="applyCheckboxFilter()" style="background:#1877f2; color:white; margin-top:10px; text-align:center; border-radius:4px;">Terapkan Filter</button>
+  <button onclick="applyCheckboxFilter()" style="background:#1877f2; color:white; margin-top:10px; text-align:center; border-radius:4px; width:100%; padding:8px; border:none; cursor:pointer;">Terapkan Filter</button>
 </div>
 
 <button id="download">Download PDF</button>
@@ -244,10 +247,7 @@ function renderTable(data) {
     totalT += valTerutang;
 
     const tr = document.createElement('tr');
-    // Fungsi untuk toggle highlight saat baris diklik
-    tr.onclick = function() {
-      this.classList.toggle('highlight');
-    };
+    tr.onclick = function() { this.classList.toggle('highlight'); };
     
     tr.innerHTML = `<td>${i+1}</td>
                     <td>${r[0] || ''}</td>
@@ -266,6 +266,7 @@ function renderTable(data) {
 
 const menu = document.getElementById('filterMenu');
 const searchBox = document.getElementById('menuSearch');
+const masterCheckbox = document.getElementById('masterCheckbox');
 
 document.querySelectorAll('th[data-col]').forEach(th => {
   th.onclick = (e) => {
@@ -276,11 +277,13 @@ document.querySelectorAll('th[data-col]').forEach(th => {
     menu.style.left = rect.left + 'px';
     
     searchBox.value = '';
+    masterCheckbox.checked = true; // Reset ke posisi terceklist saat menu dibuka
+
     const uniqueVals = [...new Set(fullData.map(r => r[activeColIndex]))].sort();
     const list = document.getElementById('checkboxList');
     list.innerHTML = '';
     uniqueVals.forEach(v => {
-      list.innerHTML += `<div class="checkbox-item"><input type="checkbox" checked value="${v}"> <span>${v}</span></div>`;
+      list.innerHTML += `<div class="checkbox-item"><input type="checkbox" checked value="${v}" onclick="updateMasterCheckbox()"> <span>${v}</span></div>`;
     });
     e.stopPropagation();
   };
@@ -300,6 +303,12 @@ function toggleAllCheckboxes(state) {
   checkboxes.forEach(cb => {
     if (cb.parentElement.style.display !== 'none') cb.checked = state;
   });
+}
+
+function updateMasterCheckbox() {
+  const checkboxes = Array.from(document.querySelectorAll('#checkboxList input[type="checkbox"]'));
+  const allChecked = checkboxes.every(cb => cb.checked);
+  masterCheckbox.checked = allChecked;
 }
 
 function execSort(dir) {
