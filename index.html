@@ -58,10 +58,9 @@
     border-radius: 4px; box-sizing: border-box; font-size: 12px;
   }
   
-  /* Style untuk Master Checkbox */
   .master-checkbox-container {
     display: flex; align-items: center; gap: 5px; font-size: 12px;
-    padding: 5px 0; border-bottom: 1px solid #eee; margin-bottom: 5px;
+    padding: 5px 0; border-bottom: 1px dotted #eee;
     font-weight: bold;
   }
 
@@ -121,6 +120,9 @@
   
   <div class="master-checkbox-container">
     <input type="checkbox" id="masterCheckbox" checked onclick="toggleAllCheckboxes(this.checked)"> <span>Pilih Semua</span>
+  </div>
+  <div class="master-checkbox-container" style="border-bottom: 1px solid #eee; color: #d4a017;">
+    <input type="checkbox" id="highlightOnlyCheckbox"> <span>Filter Highlight</span>
   </div>
 
   <div class="checkbox-list" id="checkboxList"></div>
@@ -247,6 +249,7 @@ function renderTable(data) {
     totalT += valTerutang;
 
     const tr = document.createElement('tr');
+    tr.dataset.originalIndex = i; // Simpan index untuk lacak highlight
     tr.onclick = function() { this.classList.toggle('highlight'); };
     
     tr.innerHTML = `<td>${i+1}</td>
@@ -267,6 +270,7 @@ function renderTable(data) {
 const menu = document.getElementById('filterMenu');
 const searchBox = document.getElementById('menuSearch');
 const masterCheckbox = document.getElementById('masterCheckbox');
+const highlightOnlyCheckbox = document.getElementById('highlightOnlyCheckbox');
 
 document.querySelectorAll('th[data-col]').forEach(th => {
   th.onclick = (e) => {
@@ -277,7 +281,8 @@ document.querySelectorAll('th[data-col]').forEach(th => {
     menu.style.left = rect.left + 'px';
     
     searchBox.value = '';
-    masterCheckbox.checked = true; // Reset ke posisi terceklist saat menu dibuka
+    masterCheckbox.checked = true;
+    highlightOnlyCheckbox.checked = false; // Reset highlight filter
 
     const uniqueVals = [...new Set(fullData.map(r => r[activeColIndex]))].sort();
     const list = document.getElementById('checkboxList');
@@ -325,8 +330,22 @@ function execSort(dir) {
 }
 
 function applyCheckboxFilter() {
-  const checked = Array.from(document.querySelectorAll('#checkboxList input:checked')).map(i => i.value);
-  filteredData = fullData.filter(r => checked.includes(String(r[activeColIndex])));
+  const checkedVals = Array.from(document.querySelectorAll('#checkboxList input:checked')).map(i => i.value);
+  
+  // Ambil No. Faktur dari baris yang sedang ter-highlight di layar
+  const highlightedNoFakturs = Array.from(document.querySelectorAll('#hasilBody tr.highlight'))
+    .map(tr => tr.cells[1].innerText);
+
+  filteredData = fullData.filter(r => {
+    const matchVal = checkedVals.includes(String(r[activeColIndex]));
+    
+    // Jika "Filter Highlight" dicentang, hanya tampilkan yang ada di list highlight
+    if (highlightOnlyCheckbox.checked) {
+      return matchVal && highlightedNoFakturs.includes(r[0]);
+    }
+    return matchVal;
+  });
+
   renderTable(filteredData);
   menu.style.display = 'none';
 }
