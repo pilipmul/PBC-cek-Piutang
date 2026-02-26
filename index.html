@@ -40,6 +40,11 @@
     position: absolute; right: 5px; top: 50%; transform: translateY(-50%);
     width: 14px; height: 14px; fill: white;
   }
+  /* Style untuk menandai filter aktif */
+  .filter-active .filter-icon {
+    fill: #ffeb3b !important; /* Warna kuning terang untuk ikon aktif */
+    filter: drop-shadow(0 0 2px rgba(0,0,0,0.5));
+  }
 
   .filter-menu {
     position: absolute; top: 100%; left: 0; background: white; color: black;
@@ -249,7 +254,7 @@ function renderTable(data) {
     totalT += valTerutang;
 
     const tr = document.createElement('tr');
-    tr.dataset.originalIndex = i; // Simpan index untuk lacak highlight
+    tr.dataset.originalIndex = i;
     tr.onclick = function() { this.classList.toggle('highlight'); };
     
     tr.innerHTML = `<td>${i+1}</td>
@@ -281,14 +286,22 @@ document.querySelectorAll('th[data-col]').forEach(th => {
     menu.style.left = rect.left + 'px';
     
     searchBox.value = '';
-    masterCheckbox.checked = true;
-    highlightOnlyCheckbox.checked = false; // Reset highlight filter
+    
+    // Logika agar masterCheckbox mengikuti status visual kolom
+    const isFiltered = th.classList.contains('filter-active');
+    masterCheckbox.checked = !isFiltered;
+    highlightOnlyCheckbox.checked = false;
 
     const uniqueVals = [...new Set(fullData.map(r => r[activeColIndex]))].sort();
     const list = document.getElementById('checkboxList');
     list.innerHTML = '';
+    
+    // Mendapatkan nilai-nilai yang saat ini tampil untuk dicentang
+    const currentShownVals = [...new Set(filteredData.map(r => r[activeColIndex]))];
+
     uniqueVals.forEach(v => {
-      list.innerHTML += `<div class="checkbox-item"><input type="checkbox" checked value="${v}" onclick="updateMasterCheckbox()"> <span>${v}</span></div>`;
+      const isChecked = currentShownVals.includes(v);
+      list.innerHTML += `<div class="checkbox-item"><input type="checkbox" ${isChecked ? 'checked' : ''} value="${v}" onclick="updateMasterCheckbox()"> <span>${v}</span></div>`;
     });
     e.stopPropagation();
   };
@@ -330,16 +343,23 @@ function execSort(dir) {
 }
 
 function applyCheckboxFilter() {
-  const checkedVals = Array.from(document.querySelectorAll('#checkboxList input:checked')).map(i => i.value);
+  const allCheckboxes = Array.from(document.querySelectorAll('#checkboxList input[type="checkbox"]'));
+  const checkedVals = allCheckboxes.filter(i => i.checked).map(i => i.value);
+  const isAllChecked = allCheckboxes.every(cb => cb.checked);
   
-  // Ambil No. Faktur dari baris yang sedang ter-highlight di layar
+  // Update UI Ikon di Header
+  const targetTh = document.querySelector(`th[data-col="${activeColIndex}"]`);
+  if (!isAllChecked || highlightOnlyCheckbox.checked) {
+    targetTh.classList.add('filter-active');
+  } else {
+    targetTh.classList.remove('filter-active');
+  }
+
   const highlightedNoFakturs = Array.from(document.querySelectorAll('#hasilBody tr.highlight'))
     .map(tr => tr.cells[1].innerText);
 
   filteredData = fullData.filter(r => {
     const matchVal = checkedVals.includes(String(r[activeColIndex]));
-    
-    // Jika "Filter Highlight" dicentang, hanya tampilkan yang ada di list highlight
     if (highlightOnlyCheckbox.checked) {
       return matchVal && highlightedNoFakturs.includes(r[0]);
     }
