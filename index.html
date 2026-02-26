@@ -36,19 +36,29 @@
   tbody tr:hover { background-color: #f9f9f9; }
   .highlight { background-color: #fff9c4 !important; }
 
-  /* Ikon Dasar (Panah Bawah) */
+  /* Ikon Dasar */
   .filter-icon {
     position: absolute; right: 5px; top: 50%; transform: translateY(-50%);
     width: 14px; height: 14px; fill: white;
-    transition: all 0.2s;
   }
 
-  /* Style Ikon Filter Aktif (Corong Excel) */
+  /* Style saat Filter Aktif: Sembunyikan panah, ganti dengan Corong Excel */
   .filter-active .filter-icon {
-    fill: #ffeb3b !important;
+    opacity: 0; /* Sembunyikan ikon asli */
+  }
+
+  .filter-active::after {
+    content: "";
+    position: absolute;
+    right: 5px;
+    top: 50%;
+    transform: translateY(-50%);
     width: 16px;
     height: 16px;
-    content: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23ffeb3b'%3E%3Cpath d='M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z'/%3E%3C/svg%3E");
+    background-color: #ffeb3b;
+    /* Masking untuk membentuk corong */
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z'/%3E%3C/svg%3E") no-repeat center;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z'/%3E%3C/svg%3E") no-repeat center;
   }
 
   .filter-menu {
@@ -291,7 +301,6 @@ document.querySelectorAll('th[data-col]').forEach(th => {
     
     searchBox.value = '';
     
-    // Sinkronisasi status masterCheckbox dengan data yang difilter saat ini
     const uniqueValsInCol = [...new Set(fullData.map(r => r[activeColIndex]))];
     const currentShownVals = [...new Set(filteredData.map(r => r[activeColIndex]))];
     masterCheckbox.checked = uniqueValsInCol.every(v => currentShownVals.includes(v));
@@ -350,8 +359,9 @@ function applyCheckboxFilter() {
   const checkedVals = allCheckboxes.filter(i => i.checked).map(i => i.value);
   const isAllChecked = allCheckboxes.every(cb => cb.checked);
   
-  // Update UI Ikon Corong Excel
   const targetTh = document.querySelector(`th[data-col="${activeColIndex}"]`);
+  
+  // Logika Filter Aktif: Jika tidak semua diceklis ATAU filter highlight aktif
   if (!isAllChecked || highlightOnlyCheckbox.checked) {
     targetTh.classList.add('filter-active');
   } else {
