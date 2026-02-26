@@ -32,6 +32,11 @@
   th, td { border: 1px solid #ccc; padding: 8px; text-align: left; position: relative; }
   th { background: #1877f2; color: #fff; padding-right: 25px; user-select: none; cursor: pointer; }
   
+  /* Tambahan Style untuk Highlight */
+  tbody tr { cursor: pointer; transition: background 0.2s; }
+  tbody tr:hover { background-color: #f9f9f9; }
+  .highlight { background-color: #fff9c4 !important; } /* Warna kuning muda saat diklik */
+
   .filter-icon {
     position: absolute; right: 5px; top: 50%; transform: translateY(-50%);
     width: 14px; height: 14px; fill: white;
@@ -129,7 +134,6 @@ let fullData = [];
 let filteredData = []; 
 let activeColIndex = -1;
 
-// Fungsi pembantu angka Indo
 function parseIndoNumber(str) {
   if (!str) return 0;
   let clean = String(str).replace(/\./g, '').replace(',', '.');
@@ -140,21 +144,14 @@ function formatIndoNumber(num) {
   return num.toLocaleString('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 }
 
-// Fungsi pembantu format tanggal: 30.12.2025 -> 30-Dec-25
 function formatIndoDate(dateStr) {
   if (!dateStr || !dateStr.includes('.')) return dateStr;
   const parts = dateStr.split('.');
   if (parts.length !== 3) return dateStr;
-
-  const day = parts[0];
-  const monthIdx = parseInt(parts[1]) - 1;
-  const yearFull = parts[2];
-  
   const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-  const monthName = months[monthIdx] || parts[1];
-  const yearShort = yearFull.length === 4 ? yearFull.substring(2) : yearFull;
-
-  return `${day}-${monthName}-${yearShort}`;
+  const monthName = months[parseInt(parts[1]) - 1] || parts[1];
+  const yearShort = parts[2].substring(2);
+  return `${parts[0]}-${monthName}-${yearShort}`;
 }
 
 function fetchMasterLokasi() {
@@ -214,12 +211,12 @@ document.getElementById('filterForm').onsubmit = (e) => {
       return noPel === lokasiInput && (passVal === MASTER_PASSWORD || passVal === passSheet);
     }).map(r => [
       r[iNoFak], 
-      formatIndoDate(r[iTglFak]), // Format tanggal faktur
+      formatIndoDate(r[iTglFak]), 
       r[iNoPel], 
       r[iNamaPel], 
       r[iNilai], 
       r[iTerutang], 
-      formatIndoDate(r[iTglBayar]), // Format tanggal bayar
+      formatIndoDate(r[iTglBayar]), 
       r[iKet]
     ]);
 
@@ -243,11 +240,15 @@ function renderTable(data) {
   data.forEach((r, i) => {
     const valFaktur = parseIndoNumber(r[4]);
     const valTerutang = parseIndoNumber(r[5]);
-    
     totalN += valFaktur;
     totalT += valTerutang;
 
     const tr = document.createElement('tr');
+    // Fungsi untuk toggle highlight saat baris diklik
+    tr.onclick = function() {
+      this.classList.toggle('highlight');
+    };
+    
     tr.innerHTML = `<td>${i+1}</td>
                     <td>${r[0] || ''}</td>
                     <td>${r[1] || ''}</td>
