@@ -129,17 +129,32 @@ let fullData = [];
 let filteredData = []; 
 let activeColIndex = -1;
 
-// Fungsi pembantu untuk mengubah string format Indo "1.234,56" menjadi angka 1234.56
+// Fungsi pembantu angka Indo
 function parseIndoNumber(str) {
   if (!str) return 0;
-  // Hapus titik (ribuan) dan ganti koma dengan titik (desimal)
   let clean = String(str).replace(/\./g, '').replace(',', '.');
   return parseFloat(clean) || 0;
 }
 
-// Fungsi pembantu untuk memformat angka kembali ke format Indonesia
 function formatIndoNumber(num) {
   return num.toLocaleString('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+}
+
+// Fungsi pembantu format tanggal: 30.12.2025 -> 30-Dec-25
+function formatIndoDate(dateStr) {
+  if (!dateStr || !dateStr.includes('.')) return dateStr;
+  const parts = dateStr.split('.');
+  if (parts.length !== 3) return dateStr;
+
+  const day = parts[0];
+  const monthIdx = parseInt(parts[1]) - 1;
+  const yearFull = parts[2];
+  
+  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const monthName = months[monthIdx] || parts[1];
+  const yearShort = yearFull.length === 4 ? yearFull.substring(2) : yearFull;
+
+  return `${day}-${monthName}-${yearShort}`;
 }
 
 function fetchMasterLokasi() {
@@ -197,7 +212,16 @@ document.getElementById('filterForm').onsubmit = (e) => {
       const noPel = r[iNoPel]?.trim().toLowerCase();
       const passSheet = r[iPass]?.trim();
       return noPel === lokasiInput && (passVal === MASTER_PASSWORD || passVal === passSheet);
-    }).map(r => [r[iNoFak], r[iTglFak], r[iNoPel], r[iNamaPel], r[iNilai], r[iTerutang], r[iTglBayar], r[iKet]]);
+    }).map(r => [
+      r[iNoFak], 
+      formatIndoDate(r[iTglFak]), // Format tanggal faktur
+      r[iNoPel], 
+      r[iNamaPel], 
+      r[iNilai], 
+      r[iTerutang], 
+      formatIndoDate(r[iTglBayar]), // Format tanggal bayar
+      r[iKet]
+    ]);
 
     if(!fullData.length) return alert("Data tidak ditemukan atau password salah");
     
@@ -217,7 +241,6 @@ function renderTable(data) {
   let totalN = 0, totalT = 0;
   
   data.forEach((r, i) => {
-    // Parsing nilai untuk perhitungan total
     const valFaktur = parseIndoNumber(r[4]);
     const valTerutang = parseIndoNumber(r[5]);
     
@@ -281,7 +304,6 @@ function toggleAllCheckboxes(state) {
 function execSort(dir) {
   filteredData.sort((a, b) => {
     let valA = a[activeColIndex], valB = b[activeColIndex];
-    // Gunakan parser indo jika kolom adalah Nilai Faktur (4) atau Terutang (5)
     if(activeColIndex === 4 || activeColIndex === 5) {
       valA = parseIndoNumber(valA);
       valB = parseIndoNumber(valB);
