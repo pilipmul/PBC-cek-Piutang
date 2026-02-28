@@ -36,26 +36,15 @@
   tbody tr:hover { background-color: #f9f9f9; }
   .highlight { background-color: #fff9c4 !important; }
 
-  /* Ikon Dasar */
   .filter-icon {
     position: absolute; right: 5px; top: 50%; transform: translateY(-50%);
     width: 14px; height: 14px; fill: white;
   }
 
-  /* Style saat Filter Aktif */
-  .filter-active .filter-icon {
-    opacity: 0; 
-  }
-
+  .filter-active .filter-icon { opacity: 0; }
   .filter-active::after {
-    content: "";
-    position: absolute;
-    right: 5px;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 16px;
-    height: 16px;
-    background-color: #ffeb3b;
+    content: ""; position: absolute; right: 5px; top: 50%; transform: translateY(-50%);
+    width: 16px; height: 16px; background-color: #ffeb3b;
     -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z'/%3E%3C/svg%3E") no-repeat center;
     mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z'/%3E%3C/svg%3E") no-repeat center;
   }
@@ -66,23 +55,11 @@
     z-index: 1000; display: none; width: 220px; padding: 10px; border-radius: 4px;
   }
   .filter-menu h4 { margin: 0 0 10px 0; font-size: 12px; border-bottom: 1px solid #eee; padding-bottom: 5px; }
-  .filter-menu button {
-    display: block; width: 100%; text-align: left; background: none; border: none;
-    padding: 8px; cursor: pointer; font-size: 13px;
-  }
+  .filter-menu button { display: block; width: 100%; text-align: left; background: none; border: none; padding: 8px; cursor: pointer; font-size: 13px; }
   .filter-menu button:hover { background: #f0f2f5; }
 
-  .filter-search-box {
-    width: 100%; padding: 6px; margin: 5px 0; border: 1px solid #ddd;
-    border-radius: 4px; box-sizing: border-box; font-size: 12px;
-  }
-  
-  .master-checkbox-container {
-    display: flex; align-items: center; gap: 5px; font-size: 12px;
-    padding: 5px 0; border-bottom: 1px dotted #eee;
-    font-weight: bold;
-  }
-
+  .filter-search-box { width: 100%; padding: 6px; margin: 5px 0; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-size: 12px; }
+  .master-checkbox-container { display: flex; align-items: center; gap: 5px; font-size: 12px; padding: 5px 0; border-bottom: 1px dotted #eee; font-weight: bold; }
   .checkbox-list { max-height: 150px; overflow-y: auto; margin-top: 5px; border: 1px solid #eee; padding: 5px; }
   .checkbox-item { display: flex; align-items: center; gap: 5px; font-size: 12px; margin-bottom: 4px; }
 
@@ -157,7 +134,7 @@ const MASTER_PASSWORD = "master123";
 let fullData = []; 
 let filteredData = []; 
 let activeColIndex = -1;
-let currentAppliedFilters = {}; // Menyimpan status filter per kolom
+let currentAppliedFilters = {}; 
 
 function parseIndoNumber(str) {
   if (!str) return 0;
@@ -235,14 +212,7 @@ document.getElementById('filterForm').onsubmit = (e) => {
       const passSheet = r[iPass]?.trim();
       return noPel === lokasiInput && (passVal === MASTER_PASSWORD || passVal === passSheet);
     }).map(r => [
-      r[iNoFak], 
-      formatIndoDate(r[iTglFak]), 
-      r[iNoPel], 
-      r[iNamaPel], 
-      r[iNilai], 
-      r[iTerutang], 
-      formatIndoDate(r[iTglBayar]), 
-      r[iKet]
+      r[iNoFak], formatIndoDate(r[iTglFak]), r[iNoPel], r[iNamaPel], r[iNilai], r[iTerutang], formatIndoDate(r[iTglBayar]), r[iKet]
     ]);
 
     if(!fullData.length) return alert("Data tidak ditemukan atau password salah");
@@ -261,28 +231,14 @@ function renderTable(data) {
   const body = document.getElementById('hasilBody');
   body.innerHTML = '';
   let totalN = 0, totalT = 0;
-  
   data.forEach((r, i) => {
-    const valFaktur = parseIndoNumber(r[4]);
-    const valTerutang = parseIndoNumber(r[5]);
-    totalN += valFaktur;
-    totalT += valTerutang;
-
+    totalN += parseIndoNumber(r[4]);
+    totalT += parseIndoNumber(r[5]);
     const tr = document.createElement('tr');
     tr.onclick = function() { this.classList.toggle('highlight'); };
-    
-    tr.innerHTML = `<td>${i+1}</td>
-                    <td>${r[0] || ''}</td>
-                    <td>${r[1] || ''}</td>
-                    <td>${r[2] || ''}</td>
-                    <td>${r[3] || ''}</td>
-                    <td>${r[4] || ''}</td>
-                    <td>${r[5] || ''}</td>
-                    <td>${r[6] || ''}</td>
-                    <td>${r[7] || ''}`;
+    tr.innerHTML = `<td>${i+1}</td><td>${r[0]||''}</td><td>${r[1]||''}</td><td>${r[2]||''}</td><td>${r[3]||''}</td><td>${r[4]||''}</td><td>${r[5]||''}</td><td>${r[6]||''}</td><td>${r[7]||''}</td>`;
     body.appendChild(tr);
   });
-  
   document.getElementById('total').innerText = `Total Nilai Faktur: Rp ${formatIndoNumber(totalN)} | Total Terutang: Rp ${formatIndoNumber(totalT)}`;
 }
 
@@ -298,58 +254,59 @@ document.querySelectorAll('th[data-col]').forEach(th => {
     menu.style.display = 'block';
     menu.style.top = (rect.bottom + window.scrollY) + 'px';
     menu.style.left = rect.left + 'px';
-    
     searchBox.value = '';
     
-    // EXCEL STYLE: Ambil nilai unik hanya dari data yang sedang tampil (filteredData)
-    // Kecuali jika kolom ini adalah satu-satunya yang memfilter, ambil dari fullData
-    const uniqueValsInFiltered = [...new Set(filteredData.map(r => String(r[activeColIndex])))].sort();
-    const allUniqueInFull = [...new Set(fullData.map(r => String(r[activeColIndex])))].sort();
+    // --- LOGIKA EXCEL ---
+    // 1. Dapatkan data yang difilter oleh kolom LAIN (kecuali kolom ini sendiri)
+    const dataFilteredByOthers = fullData.filter(r => {
+      for (let colIdx in currentAppliedFilters) {
+        if (parseInt(colIdx) === activeColIndex) continue; // Abaikan filter kolom ini
+        if (!currentAppliedFilters[colIdx].includes(String(r[colIdx]))) return false;
+      }
+      return true;
+    });
 
-    highlightOnlyCheckbox.checked = false;
+    // 2. Ambil nilai unik dari hasil filter kolom lain tersebut
+    const availableVals = [...new Set(dataFilteredByOthers.map(r => String(r[activeColIndex])))].sort();
+    
+    // 3. Tentukan mana yang sedang ter-cek (dari filter yang sudah tersimpan)
+    const currentlyChecked = currentAppliedFilters[activeColIndex] || availableVals;
 
     const list = document.getElementById('checkboxList');
     list.innerHTML = '';
     
-    // Tampilkan hanya nilai yang tersedia berdasarkan filter di kolom lain
-    uniqueValsInFiltered.forEach(v => {
-      list.innerHTML += `<div class="checkbox-item"><input type="checkbox" checked value="${v}" onclick="updateMasterCheckbox()"> <span>${v}</span></div>`;
+    availableVals.forEach(v => {
+      const isChecked = currentlyChecked.includes(v);
+      list.innerHTML += `<div class="checkbox-item"><input type="checkbox" ${isChecked ? 'checked' : ''} value="${v}" onclick="updateMasterCheckbox()"> <span>${v}</span></div>`;
     });
     
-    masterCheckbox.checked = true;
+    updateMasterCheckbox();
     e.stopPropagation();
   };
 });
 
 function searchInMenu() {
   const filter = searchBox.value.toLowerCase();
-  const items = document.querySelectorAll('.checkbox-item');
-  items.forEach(item => {
-    const text = item.innerText.toLowerCase();
-    item.style.display = text.includes(filter) ? "flex" : "none";
+  document.querySelectorAll('.checkbox-item').forEach(item => {
+    item.style.display = item.innerText.toLowerCase().includes(filter) ? "flex" : "none";
   });
 }
 
 function toggleAllCheckboxes(state) {
-  const checkboxes = document.querySelectorAll('#checkboxList input[type="checkbox"]');
-  checkboxes.forEach(cb => {
+  document.querySelectorAll('#checkboxList input[type="checkbox"]').forEach(cb => {
     if (cb.parentElement.style.display !== 'none') cb.checked = state;
   });
 }
 
 function updateMasterCheckbox() {
-  const checkboxes = Array.from(document.querySelectorAll('#checkboxList input[type="checkbox"]'));
-  const allChecked = checkboxes.every(cb => cb.checked);
-  masterCheckbox.checked = allChecked;
+  const cbs = Array.from(document.querySelectorAll('#checkboxList input[type="checkbox"]'));
+  masterCheckbox.checked = cbs.length > 0 && cbs.every(cb => cb.checked);
 }
 
 function execSort(dir) {
   filteredData.sort((a, b) => {
     let valA = a[activeColIndex], valB = b[activeColIndex];
-    if(activeColIndex === 4 || activeColIndex === 5) {
-      valA = parseIndoNumber(valA);
-      valB = parseIndoNumber(valB);
-    }
+    if(activeColIndex === 4 || activeColIndex === 5) { valA = parseIndoNumber(valA); valB = parseIndoNumber(valB); }
     return dir === 'asc' ? (valA > valB ? 1 : -1) : (valA < valB ? 1 : -1);
   });
   renderTable(filteredData);
@@ -357,14 +314,12 @@ function execSort(dir) {
 }
 
 function applyCheckboxFilter() {
-  const allCheckboxes = Array.from(document.querySelectorAll('#checkboxList input[type="checkbox"]'));
-  const checkedVals = allCheckboxes.filter(i => i.checked).map(i => i.value);
-  const isAllChecked = allCheckboxes.length > 0 && allCheckboxes.every(cb => cb.checked);
-  
+  const cbs = Array.from(document.querySelectorAll('#checkboxList input[type="checkbox"]'));
+  const checkedVals = cbs.filter(i => i.checked).map(i => i.value);
+  const isAllChecked = cbs.every(cb => cb.checked);
   const targetTh = document.querySelector(`th[data-col="${activeColIndex}"]`);
   
-  // Update status filter aktif untuk kolom ini
-  if (!isAllChecked || highlightOnlyCheckbox.checked) {
+  if (!isAllChecked) {
     targetTh.classList.add('filter-active');
     currentAppliedFilters[activeColIndex] = checkedVals;
   } else {
@@ -372,24 +327,13 @@ function applyCheckboxFilter() {
     delete currentAppliedFilters[activeColIndex];
   }
 
-  const highlightedNoFakturs = Array.from(document.querySelectorAll('#hasilBody tr.highlight'))
-    .map(tr => tr.cells[1].innerText);
+  const highlightedNoFakturs = Array.from(document.querySelectorAll('#hasilBody tr.highlight')).map(tr => tr.cells[1].innerText);
 
-  // Filter data berdasarkan semua kriteria yang aktif di currentAppliedFilters
   filteredData = fullData.filter(r => {
-    // Cek apakah baris memenuhi kriteria di setiap kolom yang sedang difilter
     for (let colIdx in currentAppliedFilters) {
-      if (!currentAppliedFilters[colIdx].includes(String(r[colIdx]))) {
-        return false;
-      }
+      if (!currentAppliedFilters[colIdx].includes(String(r[colIdx]))) return false;
     }
-    
-    // Cek filter highlight jika aktif
-    if (highlightOnlyCheckbox.checked) {
-      return highlightedNoFakturs.includes(r[0]);
-    }
-    
-    return true;
+    return highlightOnlyCheckbox.checked ? highlightedNoFakturs.includes(r[0]) : true;
   });
 
   renderTable(filteredData);
@@ -399,7 +343,6 @@ function applyCheckboxFilter() {
 document.onclick = () => menu.style.display = 'none';
 menu.onclick = (e) => e.stopPropagation();
 document.getElementById('backBtn').onclick = () => location.reload();
-
 document.getElementById('download').onclick = () => {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF('l');
